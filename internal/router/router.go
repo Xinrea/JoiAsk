@@ -27,51 +27,48 @@ func Run() {
 		SameSite: http.SameSiteNoneMode,
 	})
 	r.Use(sessions.Sessions("session", store))
-	normal := r.Group("/v1")
-	{
-		normal.POST("/login", login)
-		normal.GET("/tag", getTag)
-		normal.GET("/questions", func(c *gin.Context) {
-			if c.Query("tag_id") == "" {
-				getAllQuestions(c)
-			} else {
-				getAllQuestionsByTag(c)
-			}
-		})
-		normal.POST("/questions", addQuestion)
-		normal.GET("/rainbows", getAllRainbowQuestions)
-		normal.GET("/like", likes)
-		normal.GET("/tags", getAllTags)
-		normal.GET("/config", func(c *gin.Context) {
-			config, err := database.GetConfig()
-			if err != nil {
-				c.JSON(200, gin.H{
-					"code":    3,
-					"message": "获取配置失败",
-				})
-				return
-			}
+	r.POST("/login", login)
+	r.GET("/tag", getTag)
+	r.GET("/questions", func(c *gin.Context) {
+		if c.Query("tag_id") == "" {
+			getAllQuestions(c)
+		} else {
+			getAllQuestionsByTag(c)
+		}
+	})
+	r.POST("/questions", addQuestion)
+	r.GET("/rainbows", getAllRainbowQuestions)
+	r.GET("/like", likes)
+	r.GET("/tags", getAllTags)
+	r.GET("/config", func(c *gin.Context) {
+		config, err := database.GetConfig()
+		if err != nil {
 			c.JSON(200, gin.H{
-				"code":    0,
-				"message": "获取成功",
-				"data":    config,
+				"code":    3,
+				"message": "获取配置失败",
 			})
+			return
+		}
+		c.JSON(200, gin.H{
+			"code":    0,
+			"message": "获取成功",
+			"data":    config,
 		})
-	}
-	authed := r.Group("/v1")
+	})
+	authed := r.Group("/auth")
 	authed.Use(authMiddleware)
 	{
 		authed.GET("/logout", logout)
-		authed.GET("/auth", func(c *gin.Context) {
+		authed.GET("/login", func(c *gin.Context) {
 			c.JSON(200, gin.H{
 				"code":    0,
 				"message": "已登录",
 			})
 		})
-		authed.GET("/auth/tags", authGetAllTags)
-		authed.POST("/auth/questions", authGetAllQuestions)
-		authed.PUT("/auth/questions", updateQuestion)
-		authed.DELETE("/auth/questions", deleteQuesion)
+		authed.GET("/tags", authGetAllTags)
+		authed.POST("/questions", authGetAllQuestions)
+		authed.PUT("/questions", updateQuestion)
+		authed.DELETE("/questions", deleteQuesion)
 		authed.POST("/config", func(c *gin.Context) {
 			a := c.PostForm("announcement")
 			database.SetConfig(a)
