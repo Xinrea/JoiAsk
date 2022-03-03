@@ -79,7 +79,7 @@ func migrateOldData() {
 		} else {
 			q.ImagesNum = 0
 		}
-		q.CreatedAt = date
+		q.CreatedAt = date.Add(-8 * time.Hour)
 		if err := database.AddNewQuestion(q); err != nil {
 			log.Fatal(err)
 		}
