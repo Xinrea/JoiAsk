@@ -186,7 +186,6 @@ func addQuestion(c *gin.Context) {
 	q.Content = c.PostForm("content")
 	q.IsHide = c.PostForm("hide") == "true"
 	q.IsRainbow = c.PostForm("rainbow") == "true"
-	q.IsPublished = true
 	mp, _ := c.MultipartForm()
 	for _, v := range mp.File["files[]"] {
 		f, err := v.Open()

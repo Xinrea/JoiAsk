@@ -14,10 +14,11 @@ import (
 )
 
 func Run() {
+	// gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(gin.Recovery())
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5500", "http://192.168.50.198:5500"},
+		AllowOrigins:     []string{"https://ask.vjoi.cn"},
 		AllowCredentials: true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
 	}))
