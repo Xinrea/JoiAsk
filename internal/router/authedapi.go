@@ -57,7 +57,7 @@ func updateQuestion(c *gin.Context) {
 		})
 		return
 	}
-	row, ok := params["key"].(string)
+	key, ok := params["key"].(string)
 	if !ok {
 		c.JSON(200, gin.H{
 			"code":    9,
@@ -72,13 +72,32 @@ func updateQuestion(c *gin.Context) {
 		})
 		return
 	}
-	err := database.UpdateQuestion(uint(id), row, params["value"])
-	if err != nil {
-		c.JSON(200, gin.H{
-			"code":    3,
-			"message": "更新失败",
-		})
-		return
+	if key != "_tag" {
+		err := database.UpdateQuestion(uint(id), key, params["value"])
+		if err != nil {
+			c.JSON(200, gin.H{
+				"code":    3,
+				"message": "更新失败",
+			})
+			return
+		}
+	} else {
+		tagID, err := database.AddNewTag(params["value"].(string))
+		if err != nil {
+			c.JSON(200, gin.H{
+				"code":    3,
+				"message": "更新失败",
+			})
+			return
+		}
+		err = database.UpdateQuestion(uint(id), "tag_id", tagID)
+		if err != nil {
+			c.JSON(200, gin.H{
+				"code":    3,
+				"message": "更新失败",
+			})
+			return
+		}
 	}
 	c.JSON(200, gin.H{
 		"code":    0,

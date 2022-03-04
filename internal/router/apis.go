@@ -9,6 +9,7 @@ import (
 	"joiask-backend/internal/storage"
 	"path"
 	"strconv"
+	"strings"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -183,7 +184,7 @@ func addQuestion(c *gin.Context) {
 	}
 	var q database.Question
 	q.TagID = int(tagID)
-	q.Content = c.PostForm("content")
+	q.Content = strings.Trim(c.PostForm("content"), " \r\n\t")
 	q.IsHide = c.PostForm("hide") == "true"
 	q.IsRainbow = c.PostForm("rainbow") == "true"
 	mp, _ := c.MultipartForm()

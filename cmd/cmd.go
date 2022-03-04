@@ -31,6 +31,7 @@ func main() {
 	if *migrate {
 		migrateOldData()
 	}
+	log.Info("Starting server")
 	router.Run()
 }
 

@@ -71,8 +71,8 @@ func Run() {
 		authed.PUT("/questions", updateQuestion)
 		authed.DELETE("/questions", deleteQuesion)
 		authed.POST("/config", func(c *gin.Context) {
-			a := c.PostForm("announcement")
-			database.SetConfig(a)
+			announcement := c.PostForm("announcement")
+			database.SetConfig(announcement)
 			c.JSON(200, gin.H{
 				"code":    0,
 				"message": "设置成功",
