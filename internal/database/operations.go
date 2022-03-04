@@ -39,6 +39,7 @@ func GetUserPasswordMD5(username string) (string, error) {
 
 type QuestionJson struct {
 	ID          uint   `json:"id"`
+	TagID       uint   `json:"tag_id"`
 	TagName     string `json:"tag_name"`
 	Content     string `json:"content"`
 	ImagesNum   int    `json:"images_num"`
@@ -73,7 +74,7 @@ func AuthAllQuestions(c TableConfig) ([]QuestionJson, int64, error) {
 	}
 	tx.Count(&total)
 	err := tx.Joins("left join tags on tags.id = questions.tag_id").
-		Select("questions.id as id, tag_name, content, images_num, images, likes, is_hide, is_published, is_rainbow, is_archived, questions.created_at").
+		Select("questions.id as id, tag_id, tag_name, content, images_num, images, likes, is_hide, is_published, is_rainbow, is_archived, questions.created_at").
 		Scopes(paginate(c.Pagination.Page, c.Pagination.PageSize)).Find(&questionList).Error
 	if err != nil {
 		return nil, 0, err
@@ -85,7 +86,7 @@ func GetAllQuestions(isPublic bool, page int, size int) ([]QuestionJson, error) 
 	var questionList []QuestionJson
 	err := db.Model(&Question{}).Scopes(public(isPublic)).
 		Joins("left join tags on tags.id = questions.tag_id").
-		Select("questions.id as id, tag_name, content, images_num, images, likes, is_hide, is_published, is_rainbow, is_archived, questions.created_at").
+		Select("questions.id as id, tag_id, tag_name, content, images_num, images, likes, is_hide, is_published, is_rainbow, is_archived, questions.created_at").
 		Scopes(differArchive(), paginate(page, size)).Find(&questionList).Error
 	if err != nil {
 		return nil, err
@@ -97,7 +98,7 @@ func GetAllQuestionsByTag(isPublic bool, tagID, page int, size int) ([]QuestionJ
 	var questionList []QuestionJson
 	err := db.Model(&Question{}).Where("tag_id = ?", tagID).Scopes(public(isPublic)).
 		Joins("left join tags on tags.id = questions.tag_id").
-		Select("questions.id, tag_name, content, images_num, images, likes, is_hide, is_published, is_rainbow, is_archived, questions.created_at").
+		Select("questions.id, tag_id, tag_name, content, images_num, images, likes, is_hide, is_published, is_rainbow, is_archived, questions.created_at").
 		Scopes(differArchive(), paginate(page, size)).Find(&questionList).Error
 	if err != nil {
 		return nil, err
@@ -109,7 +110,7 @@ func GetAllRainbowQuestions(isPublic bool, page int, size int) ([]QuestionJson, 
 	var questions []QuestionJson
 	err := db.Model(&Question{}).Scopes(rainbow(), public(isPublic)).
 		Joins("left join tags on tags.id = questions.tag_id").
-		Select("questions.id as id, tag_name, content, images_num, images, likes, is_published, is_rainbow, is_archived, questions.created_at").
+		Select("questions.id as id, tag_id, tag_name, content, images_num, images, likes, is_published, is_rainbow, is_archived, questions.created_at").
 		Scopes(differArchive(), paginate(page, size)).Find(&questions).Error
 	if err != nil {
 		return nil, err

@@ -3,6 +3,7 @@ package router
 import (
 	"joiask-backend/internal/database"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gin-contrib/cors"
@@ -14,14 +15,22 @@ import (
 )
 
 func Run() {
-	// gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(gin.Recovery())
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://ask.vjoi.cn"},
-		AllowCredentials: true,
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-	}))
+	if os.Getenv("GIN_MODE") == "release" {
+		r.Use(cors.New(cors.Config{
+			AllowOrigins:     []string{"https://ask.vjoi.cn"},
+			AllowCredentials: true,
+			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		}))
+	} else {
+		r.Use(cors.New(cors.Config{
+			AllowOrigins:     []string{"https://ask.vjoi.cn", "http://localhost:5500"},
+			AllowCredentials: true,
+			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		}))
+	}
+
 	store := cookie.NewStore([]byte("WhyJoiIsSoCute"))
 	store.Options(sessions.Options{
 		Secure:   true,
