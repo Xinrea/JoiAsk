@@ -200,6 +200,7 @@ func addQuestion(c *gin.Context) {
 			continue
 		}
 		newFileName := "upload-img/" + md5v(string(fileContent)) + path.Ext(v.Filename)
+		logrus.Info(newFileName)
 		err = storage.Upload(newFileName, bytes.NewReader(fileContent))
 		if err != nil {
 			logrus.Error(err)
