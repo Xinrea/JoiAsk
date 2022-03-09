@@ -33,6 +33,7 @@ func Run() {
 
 	store := cookie.NewStore([]byte("WhyJoiIsSoCute"))
 	store.Options(sessions.Options{
+		Path:     "/",
 		Secure:   true,
 		SameSite: http.SameSiteNoneMode,
 	})
