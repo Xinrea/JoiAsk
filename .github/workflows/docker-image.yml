@@ -6,20 +6,21 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: xinrea/joiask
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Docker Login
+    - name: Prepare Docker
       uses: docker/login-action@v1.14.1
       with:
-        registry: registry.cn-beijing.aliyuncs.com
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        ecr: auto
-        logout: true
-    - uses: actions/checkout@v2
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag registry.cn-beijing.aliyuncs.com/joi/jask:latest
-    - name: Push Docker image
-      run: docker push registry.cn-beijing.aliyuncs.com/joi/jask:latest
+      run: |
+        docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} .
+        docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}

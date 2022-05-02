@@ -1,3 +1,3 @@
+# Only for testing
 build:
-	docker build --platform linux/amd64 -t registry.cn-beijing.aliyuncs.com/joi/jask:latest .
-	docker push registry.cn-beijing.aliyuncs.com/joi/jask:latest
+	cd frontend && npm install && SITE=http://192.168.50.58:8080 OSS=https://i0.vjoi.cn npm run build
