@@ -2,6 +2,7 @@ package router
 
 import (
 	"joiask-backend/internal/database"
+	"joiask-backend/internal/storage"
 	"net/http"
 	"os"
 	"strconv"
@@ -15,7 +16,18 @@ import (
 	"github.com/spf13/viper"
 )
 
+var storageBackend storage.Storage
+
 func Run() {
+	storeConfig := storage.StorageConfig{
+		StorageType: storage.StrToType(viper.GetString("storage_type")),
+		Address:     viper.GetString("oss.address"),
+		Endpoint:    viper.GetString("oss.endpoint"),
+		AccessKey:   viper.GetString("oss.access_key"),
+		SecretKey:   viper.GetString("oss.secret_key"),
+		Bucket:      viper.GetString("oss.bucket"),
+	}
+	storageBackend = storage.New(storeConfig)
 	r := gin.Default()
 	r.Use(gin.Recovery())
 	if os.Getenv("GIN_MODE") == "release" {

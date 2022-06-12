@@ -10,7 +10,9 @@
         "host": "0.0.0.0",
         "port": 8080
     },
+    "storage_type": "oss",
     "oss":{
+        "address": "https://i0.vjoi.cn",
         "endpoint":"oss-cn-beijing.aliyuncs.com",
         "access_key":"",
         "secret_key":"",

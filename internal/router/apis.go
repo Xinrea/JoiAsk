@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"io/ioutil"
 	"joiask-backend/internal/database"
-	"joiask-backend/internal/storage"
 	"path"
 	"strconv"
 	"strings"
@@ -199,9 +198,8 @@ func addQuestion(c *gin.Context) {
 			logrus.Error(err)
 			continue
 		}
-		newFileName := "upload-img/" + md5v(string(fileContent)) + path.Ext(v.Filename)
-		logrus.Info(newFileName)
-		err = storage.Upload(newFileName, bytes.NewReader(fileContent))
+		newFileName := md5v(string(fileContent)) + path.Ext(v.Filename)
+		url, err := storageBackend.Upload(newFileName, bytes.NewReader(fileContent))
 		if err != nil {
 			logrus.Error(err)
 			c.JSON(200, gin.H{
@@ -212,9 +210,9 @@ func addQuestion(c *gin.Context) {
 		}
 		q.ImagesNum++
 		if q.Images == "" {
-			q.Images = newFileName
+			q.Images = url
 		} else {
-			q.Images += ";" + newFileName
+			q.Images += ";" + url
 		}
 	}
 	err = database.AddNewQuestion(q)

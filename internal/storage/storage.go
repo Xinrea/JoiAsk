@@ -2,33 +2,42 @@ package storage
 
 import (
 	"bytes"
-
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
-var client *oss.Client
-var bucket *oss.Bucket
-
-func Init() {
-	var err error
-	client, err = oss.New(viper.GetString("oss.endpoint"), viper.GetString("oss.access_key"), viper.GetString("oss.secret_key"))
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	// 获取存储空间。
-	bucket, err = client.Bucket(viper.GetString("oss.bucket"))
-	if err != nil {
-		logrus.Fatal(err)
-	}
+type Storage interface {
+	Upload(filename string, content *bytes.Reader) (string, error)
 }
 
-func Upload(filename string, content *bytes.Reader) error {
-	err := bucket.PutObject(filename, content)
-	if err != nil {
-		logrus.Error(err)
-		return err
+const (
+	TYPE_LOCAL = iota
+	TYPE_OSS
+)
+
+func StrToType(s string) int {
+	switch s {
+	case "local":
+		return TYPE_LOCAL
+	case "oss":
+		return TYPE_OSS
+	}
+	panic("Invalid storage type")
+}
+
+type StorageConfig struct {
+	StorageType int
+	Address     string
+	Endpoint    string
+	AccessKey   string
+	SecretKey   string
+	Bucket      string
+}
+
+func New(s StorageConfig) Storage {
+	switch s.StorageType {
+	case TYPE_LOCAL:
+		return NewLocal()
+	case TYPE_OSS:
+		return NewOSS(s.Address, s.Endpoint, s.AccessKey, s.SecretKey, s.Bucket)
 	}
 	return nil
 }
