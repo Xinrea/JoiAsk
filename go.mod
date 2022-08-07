@@ -2,12 +2,15 @@ module joiask-backend
 
 go 1.17
 
-require github.com/gin-gonic/gin v1.7.7
+require (
+	github.com/gin-gonic/contrib v0.0.0-20201101042839-6a891bf89f19
+	github.com/gin-gonic/gin v1.7.7
+	gorm.io/driver/sqlite v1.3.6
+)
 
 require (
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-gonic/contrib v0.0.0-20201101042839-6a891bf89f19 // indirect
 	github.com/go-playground/locales v0.13.0 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-playground/validator/v10 v10.4.1 // indirect
@@ -18,7 +21,7 @@ require (
 	github.com/gorilla/sessions v1.2.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.4 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/leodido/go-urn v1.2.0 // indirect
@@ -45,7 +48,7 @@ require (
 
 require (
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.1+incompatible
-	github.com/mattn/go-sqlite3 v1.14.11
+	github.com/mattn/go-sqlite3 v1.14.12
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65 // indirect
 )
 
@@ -57,5 +60,5 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.10.1
 	gorm.io/driver/mysql v1.3.2
-	gorm.io/gorm v1.23.1
+	gorm.io/gorm v1.23.4
 )

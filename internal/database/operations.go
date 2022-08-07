@@ -86,7 +86,7 @@ func GetAllQuestions(isPublic bool, page int, size int) ([]QuestionJson, error) 
 	var questionList []QuestionJson
 	err := db.Model(&Question{}).Scopes(public(isPublic)).
 		Joins("left join tags on tags.id = questions.tag_id").
-		Select("questions.id as id, tag_id, tag_name, content, images_num, images, likes, is_hide, is_published, is_rainbow, is_archived, questions.created_at").
+		Select("questions.id as id, tag_id, tag_name, content, images_num, images, likes, is_hide, is_published, is_rainbow, is_archived, questions.created_at as created_at").
 		Scopes(differArchive(), paginate(page, size)).Find(&questionList).Error
 	if err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func GetAllRainbowQuestions(isPublic bool, page int, size int) ([]QuestionJson, 
 	var questions []QuestionJson
 	err := db.Model(&Question{}).Scopes(rainbow(), public(isPublic)).
 		Joins("left join tags on tags.id = questions.tag_id").
-		Select("questions.id as id, tag_id, tag_name, content, images_num, images, likes, is_published, is_rainbow, is_archived, questions.created_at").
+		Select("questions.id as id, tag_id, tag_name, content, images_num, images, likes, is_published, is_rainbow, is_archived, questions.created_at as created_at").
 		Scopes(differArchive(), paginate(page, size)).Find(&questions).Error
 	if err != nil {
 		return nil, err

@@ -4,7 +4,8 @@ import "gorm.io/gorm"
 
 type Tag struct {
 	gorm.Model
-	TagName string
+	TagName     string
+	Description string
 }
 
 type Question struct {
