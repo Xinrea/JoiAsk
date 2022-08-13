@@ -1,40 +1,60 @@
 package database
 
-import "gorm.io/gorm"
+import (
+	"time"
+)
 
+type BaseModel struct {
+	ID        uint      `gorm:"primary_key" json:"id"`
+	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
+}
 type Tag struct {
-	gorm.Model
-	TagName     string
-	Description string
+	BaseModel
+	TagName     string `gorm:"unique" json:"tag_name"`
+	Description string `json:"description"`
 }
 
 type Question struct {
-	gorm.Model
-	TagID       int `gorm:"index"`
-	Content     string
-	ImagesNum   int
-	Images      string
-	Likes       int
-	IsHide      bool
-	IsRainbow   bool `gorm:"index"`
-	IsArchived  bool `gorm:"index"`
-	IsPublished bool `gorm:"index"`
+	BaseModel
+	TagID     int    `gorm:"index" json:"tag_id"`
+	Tag       Tag    `gorm:"foreignkey:TagID" json:"tag"`
+	Content   string `gorm:"index" json:"content"`
+	ImagesNum int    `json:"images_num"`
+	Images    string `json:"images"`
+	Likes     int    `json:"likes"`
+	IsHide    bool   `gorm:"index" json:"is_hide"`
+	IsRainbow bool   `gorm:"index" json:"is_rainbow"`
+	IsArchive bool   `gorm:"index" json:"is_archive"`
+	IsPublish bool   `gorm:"index" json:"is_publish"`
 }
 
 type LikeRecord struct {
-	gorm.Model
-	IP         string
-	QuestionID int `gorm:"index"`
-	Question   Question
+	BaseModel
+	IP         string   `gorm:"index" json:"ip"`
+	QuestionID int      `gorm:"index" json:"question_id"`
+	Question   Question `json:"question"`
 }
 
 type Admin struct {
-	gorm.Model
-	Username string `gorm:"unique"`
-	Password string
+	BaseModel
+	Username string `gorm:"unique" json:"username"`
+	Password string `json:"-"`
 }
 
 type Config struct {
-	gorm.Model
-	Announcement string
+	BaseModel
+	Announcement string `json:"announcement"`
+}
+
+func (t Tag) Json() map[string]interface{} {
+	var count int64
+	DB.Model(&Question{}).Where("tag_id = ?", t.ID).Count(&count)
+	return map[string]interface{}{
+		"id":             t.ID,
+		"tag_name":       t.TagName,
+		"description":    t.Description,
+		"question_count": count,
+		"created_at":     t.CreatedAt,
+	}
 }

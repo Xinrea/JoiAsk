@@ -2,7 +2,13 @@ package storage
 
 import (
 	"bytes"
+	"sync"
+
+	"github.com/spf13/viper"
 )
+
+var storage Storage
+var once sync.Once
 
 type Storage interface {
 	Upload(filename string, content *bytes.Reader) (string, error)
@@ -40,4 +46,19 @@ func New(s StorageConfig) Storage {
 		return NewOSS(s.Address, s.Endpoint, s.AccessKey, s.SecretKey, s.Bucket)
 	}
 	return nil
+}
+
+func Get() Storage {
+	once.Do(func() {
+		storeConfig := StorageConfig{
+			StorageType: StrToType(viper.GetString("storage_type")),
+			Address:     viper.GetString("oss.address"),
+			Endpoint:    viper.GetString("oss.endpoint"),
+			AccessKey:   viper.GetString("oss.access_key"),
+			SecretKey:   viper.GetString("oss.secret_key"),
+			Bucket:      viper.GetString("oss.bucket"),
+		}
+		storage = New(storeConfig)
+	})
+	return storage
 }

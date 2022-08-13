@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"joiask-backend/pkg/util"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -10,23 +11,53 @@ import (
 	"gorm.io/gorm"
 )
 
-var db *gorm.DB
+var DB *gorm.DB
 
+const DefaultTagName = "提问箱"
+
+// Init opens connection and try to initialize the database.
 func Init() {
 	var err error
 	switch viper.GetString("db_type") {
 	case "sqlite":
-		db, err = gorm.Open(sqlite.Open(viper.GetString("sqlite")), &gorm.Config{})
+		log.Info("Using sqlite database.")
+		DB, err = gorm.Open(sqlite.Open(viper.GetString("sqlite")), &gorm.Config{})
 	case "mysql":
+		log.Info("Using mysql database.")
 		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", viper.GetString("mysql.user"), viper.GetString("mysql.pass"), viper.GetString("mysql.host"), viper.GetInt("mysql.port"), viper.GetString("mysql.name"))
-		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+		DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	}
 	if err != nil {
 		log.Fatal(err)
 	}
-	migrateAall()
+	initializeDB()
 }
 
-func migrateAall() {
-	db.AutoMigrate(&Tag{}, &Question{}, &LikeRecord{}, &Admin{}, &Config{})
+// initializeDB initializes the database, create tables and default records.
+func initializeDB() {
+	err := DB.AutoMigrate(&Question{}, &LikeRecord{}, &Admin{}, &Config{}, &Tag{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Initialize default admin account.
+	if DB.Where("username = ?", "admin").First(&Admin{}).RowsAffected == 0 {
+		log.Info("Initializing default admin account.")
+		if err := DB.Create(&Admin{Username: "admin", Password: util.Md5v("admin")}).Error; err != nil {
+			log.Fatal("Failed to initialize default admin account.", err)
+		}
+	}
+	// Initialize default config.
+	if DB.First(&Config{}).RowsAffected == 0 {
+		log.Info("Initializing default config.")
+		if err := DB.Create(&Config{Announcement: "提问内容将在审核后公开"}).Error; err != nil {
+			log.Fatal("Failed to initialize default config.", err)
+		}
+	}
+	// Initialize default tag.
+	if DB.First(&Tag{}).RowsAffected == 0 {
+		log.Info("Initializing default tag.")
+		if err := DB.Create(&Tag{TagName: DefaultTagName, Description: "默认话题"}).Error; err != nil {
+			log.Fatal("Failed to initialize default tag.", err)
+		}
+	}
 }
