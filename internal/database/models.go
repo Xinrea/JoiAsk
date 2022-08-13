@@ -19,7 +19,7 @@ type Question struct {
 	BaseModel
 	TagID     int    `gorm:"index" json:"tag_id"`
 	Tag       Tag    `gorm:"foreignkey:TagID" json:"tag"`
-	Content   string `gorm:"index" json:"content"`
+	Content   string `json:"content"`
 	ImagesNum int    `json:"images_num"`
 	Images    string `json:"images"`
 	Likes     int    `json:"likes"`

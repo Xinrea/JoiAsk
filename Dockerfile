@@ -1,12 +1,9 @@
 FROM node:16.14.0 as frontendBuilder
-ARG OSS=https://i0.vjoi.cn
-ARG SITE=https://ask.vjoi.cn
 WORKDIR /work
 COPY frontend .
 RUN npm install && npm run build
 
-
-FROM golang:1.17.2 as backendBuilder
+FROM golang:1.18 as backendBuilder
 WORKDIR /work
 COPY . .
 RUN go build -o jask cmd/cmd.go

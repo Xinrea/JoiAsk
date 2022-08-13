@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"joiask-backend/internal/database"
 	"joiask-backend/internal/router"
 
@@ -10,10 +9,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var migrate = flag.Bool("migrate", false, "migrate")
-
 func main() {
-	flag.Parse()
 	viper.SetConfigFile("./config/config.json")
 	err := viper.ReadInConfig()
 	if err != nil {
