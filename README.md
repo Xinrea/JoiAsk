@@ -15,7 +15,7 @@ docker build -t joiask .
 ```bash
 docker run -it -d --restart always \
     -p 8080:8080 \
-    -v /path/to/config.json:/work/config/cnfig.json \
+    -v /path/to/config.json:/work/config/config.json \
     -v /path/to/storage/:/work/frontend/public/upload-img/ \
     --name jask \
     ghcr.io/xinrea/joiask:latest
