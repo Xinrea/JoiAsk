@@ -190,12 +190,16 @@ func (*QuestionController) Delete(c *gin.Context) {
 		Fail(c, 404, "提问不存在")
 		return
 	}
-	err = database.DB.Delete(&q).Error
-	if err != nil {
+	tx := database.DB.Begin()
+	tx.Delete(&database.LikeRecord{}, "question_id", q.ID)
+	tx.Delete(&q)
+	if tx.Error != nil {
 		log.Error(err)
 		Fail(c, 500, "删除提问失败")
+		tx.Rollback()
 		return
 	}
+	tx.Commit()
 	Success(c, nil)
 }
 
