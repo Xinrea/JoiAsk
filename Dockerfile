@@ -11,7 +11,7 @@ RUN go build -o jask cmd/cmd.go
 FROM ubuntu:latest
 RUN apt-get update && apt-get install -y ca-certificates
 WORKDIR /work/
-COPY --from=frontendBuilder /work/public ./frontend/public
+COPY --from=frontendBuilder /work/dist ./frontend/public
 COPY --from=backendBuilder /work/jask ./
 ENV GIN_MODE=release
 CMD ["./jask"]

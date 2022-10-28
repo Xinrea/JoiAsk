@@ -24,7 +24,7 @@ func Init() {
 		DB, err = gorm.Open(sqlite.Open(viper.GetString("sqlite")), &gorm.Config{})
 	case "mysql":
 		log.Info("Using mysql database.")
-		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", viper.GetString("mysql.user"), viper.GetString("mysql.pass"), viper.GetString("mysql.host"), viper.GetInt("mysql.port"), viper.GetString("mysql.name"))
+		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True", viper.GetString("mysql.user"), viper.GetString("mysql.pass"), viper.GetString("mysql.host"), viper.GetInt("mysql.port"), viper.GetString("mysql.name"))
 		DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	}
 	if err != nil {
