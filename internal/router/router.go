@@ -33,6 +33,7 @@ func Run() {
 	r.Use(static.Serve("/admin", static.LocalFile("./frontend/public/", true)))
 	r.Use(static.Serve("/tags", static.LocalFile("./frontend/public/", true)))
 	r.Use(static.Serve("/rainbow", static.LocalFile("./frontend/public/", true)))
+	r.Use(static.Serve("/image", static.LocalFile("./frontend/public/", true)))
 	api := r.Group("/api")
 	tagController := new(controller.TagController)
 	userController := new(controller.UserController)
