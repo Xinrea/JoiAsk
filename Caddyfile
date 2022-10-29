@@ -5,7 +5,5 @@ handle /api/* {
   reverse_proxy /api/* :8080
 }
 handle {
-  root * ./frontend/dist/
-  try_files {path} /index.html
-  file_server
+  reverse_proxy :5173
 }
