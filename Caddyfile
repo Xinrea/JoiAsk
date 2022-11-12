@@ -1,9 +1,9 @@
 localhost
 
-encode gzip
 handle /api/* {
   reverse_proxy /api/* :8080
 }
-handle {
+
+handle * {
   reverse_proxy :5173
 }
