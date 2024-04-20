@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"joiask-backend/internal/database"
 	"joiask-backend/internal/storage"
@@ -203,13 +204,39 @@ func (*QuestionController) Delete(c *gin.Context) {
 	Success(c, nil)
 }
 
-func (*QuestionController) Like(c *gin.Context) {
+type EmojiRecord struct {
+	Value string `json:"value"`
+	Count int    `json:"count"`
+}
+
+var EmojiValid = map[string]bool{
+	"👍": true,
+	"👎": true,
+	"🤣": true,
+	"😭": true,
+	"😓": true,
+	"😬": true,
+	"🥳": true,
+	"😨": true,
+	"😠": true,
+	"💩": true,
+	"💖": true,
+	"🥲": true,
+}
+
+func (*QuestionController) Emoji(c *gin.Context) {
+	emojiToAdd := c.PostForm("emoji")
+	// should check emojiToAdd valid or not
+	if !EmojiValid[emojiToAdd] {
+		Fail(c, 400, "无效的表情符号")
+		return
+	}
 	ip := c.ClientIP()
 	id, _ := strconv.Atoi(c.Param("id"))
 	var lr database.LikeRecord
 	database.DB.Where("ip = ? and question_id = ?", ip, id).First(&lr)
 	if lr.ID > 0 {
-		Fail(c, 400, "您已经点过赞了")
+		Fail(c, 400, "您已经评价过了")
 		return
 	}
 	lr.IP = ip
@@ -218,30 +245,60 @@ func (*QuestionController) Like(c *gin.Context) {
 	err := tx.Create(&lr).Error
 	if err != nil {
 		log.Error(err)
-		Fail(c, 500, "点赞失败")
+		Fail(c, 500, "评价失败")
 		tx.Rollback()
 		return
 	}
-	// update likes
 	var q database.Question
 	err = database.DB.Where("id = ?", id).First(&q).Error
 	if err != nil {
 		log.Error(err)
-		Fail(c, 500, "点赞失败")
+		Fail(c, 500, "评价失败")
 		tx.Rollback()
 		return
 	}
-	q.Likes++
+	var emojis []*EmojiRecord
+	if len(q.Emojis) > 0 {
+		err = json.Unmarshal([]byte(q.Emojis), &emojis)
+		if err != nil {
+			log.Error((err))
+			Fail(c, 500, "解析表情失败")
+			tx.Rollback()
+			return
+		}
+	}
+	added := false
+	for _, e := range emojis {
+		if e.Value == emojiToAdd {
+			added = true
+			e.Count++
+			break
+		}
+	}
+	if !added {
+		emojis = append(emojis, &EmojiRecord{
+			Value: emojiToAdd,
+			Count: 1,
+		})
+	}
+	updatedList, err := json.Marshal(emojis)
+	if err != nil {
+		log.Error(err)
+		Fail(c, 500, "评价失败")
+		tx.Rollback()
+		return
+	}
+	q.Emojis = string(updatedList)
 	err = tx.Save(&q).Error
 	if err != nil {
 		log.Error(err)
-		Fail(c, 500, "点赞失败")
+		Fail(c, 500, "评价失败")
 		tx.Rollback()
 		return
 	}
 	if tx.Commit().Error != nil {
 		log.Error(err)
-		Fail(c, 500, "点赞失败")
+		Fail(c, 500, "评价失败")
 		tx.Rollback()
 		return
 	}

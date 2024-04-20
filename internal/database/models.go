@@ -17,17 +17,17 @@ type Tag struct {
 
 type Question struct {
 	BaseModel
-	TagID       int          `gorm:"index" json:"tag_id"`
-	Tag         Tag          `gorm:"foreignkey:TagID" json:"tag"`
-	Content     string       `json:"content"`
-	ImagesNum   int          `json:"images_num"`
-	Images      string       `json:"images"`
-	Likes       int          `json:"likes"`
-	IsHide      bool         `gorm:"index" json:"is_hide"`
-	IsRainbow   bool         `gorm:"index" json:"is_rainbow"`
-	IsArchive   bool         `gorm:"index" json:"is_archive"`
-	IsPublish   bool         `gorm:"index" json:"is_publish"`
-	LikeRecords []LikeRecord `gorm:"foreignkey:QuestionID;" json:"-"`
+	TagID     int    `gorm:"index" json:"tag_id"`
+	Tag       Tag    `gorm:"foreignkey:TagID" json:"tag"`
+	Content   string `json:"content"`
+	ImagesNum int    `json:"images_num"`
+	Images    string `json:"images"`
+	Likes     int    `json:"likes"`
+	IsHide    bool   `gorm:"index" json:"is_hide"`
+	IsRainbow bool   `gorm:"index" json:"is_rainbow"`
+	IsArchive bool   `gorm:"index" json:"is_archive"`
+	IsPublish bool   `gorm:"index" json:"is_publish"`
+	Emojis    string `json:"emojis"`
 }
 
 type LikeRecord struct {

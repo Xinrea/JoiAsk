@@ -62,8 +62,8 @@ func Run() {
 		{
 			api.GET("/question", questionController.Get)
 			api.POST("/question", questionController.Post)
-			api.PUT("/question/:id/like", questionController.Like)
 			api.PUT("/question/:id", authMiddleware, questionController.Put)
+			api.POST("/question/:id/emoji", questionController.Emoji)
 			api.DELETE("/question/:id", authMiddleware, questionController.Delete)
 		}
 		// Config
