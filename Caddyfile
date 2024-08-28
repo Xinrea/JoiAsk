@@ -1,9 +1,9 @@
 localhost
 
 handle /api/* {
-  reverse_proxy /api/* :8080
+	reverse_proxy /api/* :8080
 }
 
 handle * {
-  reverse_proxy :5173
+	reverse_proxy :5173
 }
