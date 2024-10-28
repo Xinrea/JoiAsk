@@ -1,9 +1,9 @@
-FROM node:16.14.0 as frontendBuilder
+FROM node:22.9.0 as frontendBuilder
 WORKDIR /work
 COPY frontend .
 RUN npm install && npm run build
 
-FROM golang:1.18 as backendBuilder
+FROM golang:1.23 as backendBuilder
 WORKDIR /work
 COPY . .
 RUN go build -o jask cmd/cmd.go

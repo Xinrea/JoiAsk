@@ -3,7 +3,7 @@ package controller
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"joiask-backend/internal/database"
 	"joiask-backend/internal/storage"
 	"joiask-backend/pkg/util"
@@ -153,7 +153,7 @@ func (*QuestionController) Post(c *gin.Context) {
 			Fail(c, 405, "文件上传失败")
 			return
 		}
-		fileContent, err := ioutil.ReadAll(f)
+		fileContent, err := io.ReadAll(f)
 		if err != nil {
 			log.Error(err)
 			Fail(c, 405, "文件上传失败")
