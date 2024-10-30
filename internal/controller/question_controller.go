@@ -201,6 +201,22 @@ func (*QuestionController) Delete(c *gin.Context) {
 		return
 	}
 	tx.Commit()
+	// clean images in storage
+	key := "upload-img/"
+	images := strings.Split(q.Images, ";")
+	filenames := []string{}
+	for i := range images {
+		cur := images[i]
+		parts := strings.SplitN(cur, key, 2)
+		if len(parts) < 2 {
+			continue
+		}
+		filenames = append(filenames, parts[1])
+	}
+	// it's ok to fail deleting
+	for _, f := range filenames {
+		_ = storage.Get().Delete(f)
+	}
 	Success(c, nil)
 }
 

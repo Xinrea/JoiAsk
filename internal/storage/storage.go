@@ -12,6 +12,7 @@ var once sync.Once
 
 type Storage interface {
 	Upload(filename string, content *bytes.Reader) (string, error)
+	Delete(filename string) error
 }
 
 const (
@@ -48,6 +49,7 @@ func New(s StorageConfig) Storage {
 	return nil
 }
 
+// Get the single storage instance
 func Get() Storage {
 	once.Do(func() {
 		storeConfig := StorageConfig{

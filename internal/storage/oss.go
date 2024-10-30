@@ -37,3 +37,11 @@ func (s *OSS) Upload(filename string, content *bytes.Reader) (string, error) {
 	}
 	return s.address + "/upload-img/" + filename, nil
 }
+
+func (s *OSS) Delete(filename string) error {
+	err := s.bucket.DeleteObject("upload-img/" + filename)
+	if err != nil {
+		logrus.Error("OSS delete file failed: ", err)
+	}
+	return err
+}
