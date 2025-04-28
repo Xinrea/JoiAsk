@@ -238,6 +238,13 @@ var EmojiValid = map[string]bool{
 	"💩": true,
 	"💖": true,
 	"🐵": true,
+	"❓": true,
+	"🫂": true,
+	"🔘": true,
+	"👅": true,
+	"🥺": true,
+	"👻": true,
+	"😅": true,
 }
 
 func (*QuestionController) Emoji(c *gin.Context) {
