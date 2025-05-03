@@ -3,6 +3,7 @@ package controller
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"joiask-backend/internal/database"
 	"joiask-backend/internal/storage"
@@ -10,14 +11,53 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sse"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm/clause"
 )
 
-type QuestionController struct{}
+type EmojiRecords struct {
+	CardID int            `json:"card_id"`
+	Emojis []*EmojiRecord `json:"emojis"`
+}
+
+type QuestionController struct {
+	emojiChan    chan EmojiRecords
+	clients      map[chan EmojiRecords]bool
+	clientsMutex sync.Mutex
+}
+
+func NewQuestionController() *QuestionController {
+	controller := &QuestionController{
+		emojiChan: make(chan EmojiRecords),
+		clients:   make(map[chan EmojiRecords]bool),
+	}
+	// Start broadcast goroutine
+	go controller.broadcast()
+	return controller
+}
+
+func (this *QuestionController) broadcast() {
+	for emoji := range this.emojiChan {
+		// Broadcast to all clients
+		this.clientsMutex.Lock()
+		for client := range this.clients {
+			select {
+			case client <- emoji:
+			default:
+				// Remove client if channel is full
+				delete(this.clients, client)
+				close(client)
+			}
+		}
+		this.clientsMutex.Unlock()
+	}
+}
 
 type QuestionRequest struct {
 	OrderBy  string `form:"order_by"`
@@ -248,33 +288,34 @@ var EmojiValid = map[string]bool{
 	"🌹": true,
 }
 
-func (*QuestionController) Emoji(c *gin.Context) {
+func (this *QuestionController) Emoji(c *gin.Context) {
 	emojiToAdd := c.PostForm("emoji")
 	// should check emojiToAdd valid or not
 	if !EmojiValid[emojiToAdd] {
 		Fail(c, 400, "无效的表情符号")
 		return
 	}
-	ip := c.ClientIP()
+	// ip := c.ClientIP()
 	id, _ := strconv.Atoi(c.Param("id"))
-	var lr database.LikeRecord
-	database.DB.Where("ip = ? and question_id = ?", ip, id).First(&lr)
-	if lr.ID > 0 {
-		Fail(c, 400, "您已经评价过了")
-		return
-	}
-	lr.IP = ip
-	lr.QuestionID = id
+	// var lr database.LikeRecord
+	// database.DB.Where("ip = ? and question_id = ?", ip, id).First(&lr)
+	// if lr.ID > 0 {
+	// 	Fail(c, 400, "您已经评价过了")
+	// 	return
+	// }
+	// lr.IP = ip
+	// lr.QuestionID = id
+	// tx := database.DB.Begin()
+	// err := tx.Create(&lr).Error
+	// if err != nil {
+	// 	log.Error(err)
+	// 	Fail(c, 500, "评价失败")
+	// 	tx.Rollback()
+	// 	return
+	// }
 	tx := database.DB.Begin()
-	err := tx.Create(&lr).Error
-	if err != nil {
-		log.Error(err)
-		Fail(c, 500, "评价失败")
-		tx.Rollback()
-		return
-	}
 	var q database.Question
-	err = database.DB.Where("id = ?", id).First(&q).Error
+	err := database.DB.Where("id = ?", id).First(&q).Error
 	if err != nil {
 		log.Error(err)
 		Fail(c, 500, "评价失败")
@@ -326,5 +367,108 @@ func (*QuestionController) Emoji(c *gin.Context) {
 		tx.Rollback()
 		return
 	}
+	this.emojiChan <- EmojiRecords{
+		CardID: id,
+		Emojis: emojis,
+	}
 	Success(c, nil)
+}
+
+func (this *QuestionController) SSE(c *gin.Context) {
+	// Set SSE headers
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("Access-Control-Allow-Origin", "*")
+	c.Header("X-Accel-Buffering", "no") // Disable buffering for Nginx
+
+	// Create a channel for this client
+	clientChan := make(chan EmojiRecords, 1024)
+
+	// Add client to the connection manager
+	this.clientsMutex.Lock()
+	this.clients[clientChan] = true
+	this.clientsMutex.Unlock()
+
+	// Create a channel to handle client disconnection
+	clientGone := c.Writer.CloseNotify()
+
+	// Create a ticker for heartbeat with initial immediate tick
+	heartbeat := time.NewTicker(15 * time.Second)
+	defer heartbeat.Stop()
+
+	// Create a message ID counter
+	messageID := 0
+
+	// Start streaming
+	c.Stream(func(w io.Writer) bool {
+		// Send initial connection message on first call
+		if messageID == 0 {
+			err := sse.Encode(w, sse.Event{
+				Event: "connected",
+				Data:  "connected",
+			})
+			if err != nil {
+				log.Error("Failed to encode connected event:", err)
+				return false
+			}
+			messageID++
+			return true
+		}
+
+		select {
+		case <-clientGone:
+			log.Info("Client disconnected")
+			// Remove client from connection manager
+			this.clientsMutex.Lock()
+			delete(this.clients, clientChan)
+			this.clientsMutex.Unlock()
+			close(clientChan)
+			return false
+		case <-heartbeat.C:
+			// Send heartbeat comment
+			err := sse.Encode(w, sse.Event{
+				Event: "heartbeat",
+				Data:  "heartbeat",
+			})
+			if err != nil {
+				log.Error("Failed to encode heartbeat event:", err)
+				return false
+			}
+			return true
+		case emojis := <-clientChan:
+			emojiJson, err := json.Marshal(emojis)
+			if err != nil {
+				log.Error("Failed to marshal emoji data:", err)
+				return false
+			}
+
+			// Send emoji update
+			err = sse.Encode(w, sse.Event{
+				Id:    fmt.Sprintf("%d", messageID),
+				Event: "emoji",
+				Data:  string(emojiJson),
+			})
+			if err != nil {
+				log.Error("Failed to encode emoji event:", err)
+				return false
+			}
+			messageID++
+			return true
+		case <-time.After(30 * time.Second):
+			// Send retry message in case of timeout
+			err := sse.Encode(w, sse.Event{
+				Event: "retry",
+				Retry: 10000,
+			})
+			if err != nil {
+				log.Error("Failed to encode retry event:", err)
+				return false
+			}
+			return true
+		}
+	})
+
+	// Cleanup when connection is closed
+	log.Info("SSE connection closed")
 }

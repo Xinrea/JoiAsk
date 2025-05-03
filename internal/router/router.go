@@ -38,7 +38,7 @@ func Run() {
 	api := r.Group("/api")
 	tagController := new(controller.TagController)
 	userController := new(controller.UserController)
-	questionController := new(controller.QuestionController)
+	questionController := controller.NewQuestionController()
 	configController := new(controller.ConfigController)
 	{
 		// User
@@ -65,6 +65,7 @@ func Run() {
 			api.POST("/question", questionController.Post)
 			api.PUT("/question/:id", authMiddleware, questionController.Put)
 			api.POST("/question/:id/emoji", questionController.Emoji)
+			api.GET("/sse", questionController.SSE)
 			api.DELETE("/question/:id", authMiddleware, questionController.Delete)
 		}
 		// Config
