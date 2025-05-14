@@ -21,21 +21,33 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// 1 for emoji op
+// 2 for archive op
+const (
+	SSEventEmoji = iota + 1
+	SSEventArchive
+)
+
+type SSEvent struct {
+	Type int
+	Data any
+}
+
 type EmojiRecords struct {
 	CardID int            `json:"card_id"`
 	Emojis []*EmojiRecord `json:"emojis"`
 }
 
 type QuestionController struct {
-	emojiChan    chan EmojiRecords
-	clients      map[chan EmojiRecords]bool
+	eventChan    chan SSEvent
+	clients      map[chan SSEvent]bool
 	clientsMutex sync.Mutex
 }
 
 func NewQuestionController() *QuestionController {
 	controller := &QuestionController{
-		emojiChan: make(chan EmojiRecords),
-		clients:   make(map[chan EmojiRecords]bool),
+		eventChan: make(chan SSEvent),
+		clients:   make(map[chan SSEvent]bool),
 	}
 	// Start broadcast goroutine
 	go controller.broadcast()
@@ -43,12 +55,12 @@ func NewQuestionController() *QuestionController {
 }
 
 func (this *QuestionController) broadcast() {
-	for emoji := range this.emojiChan {
+	for event := range this.eventChan {
 		// Broadcast to all clients
 		this.clientsMutex.Lock()
 		for client := range this.clients {
 			select {
-			case client <- emoji:
+			case client <- event:
 			default:
 				// Remove client if channel is full
 				delete(this.clients, client)
@@ -367,9 +379,12 @@ func (this *QuestionController) Emoji(c *gin.Context) {
 		tx.Rollback()
 		return
 	}
-	this.emojiChan <- EmojiRecords{
-		CardID: id,
-		Emojis: emojis,
+	this.eventChan <- SSEvent{
+		Type: SSEventEmoji,
+		Data: EmojiRecords{
+			CardID: id,
+			Emojis: emojis,
+		},
 	}
 	Success(c, nil)
 }
@@ -383,7 +398,7 @@ func (this *QuestionController) SSE(c *gin.Context) {
 	c.Header("X-Accel-Buffering", "no") // Disable buffering for Nginx
 
 	// Create a channel for this client
-	clientChan := make(chan EmojiRecords, 1024)
+	clientChan := make(chan SSEvent, 1024)
 
 	// Add client to the connection manager
 	this.clientsMutex.Lock()
