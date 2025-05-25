@@ -154,7 +154,7 @@ func (*QuestionController) Get(c *gin.Context) {
 	})
 }
 
-func (*QuestionController) Put(c *gin.Context) {
+func (this *QuestionController) Put(c *gin.Context) {
 	var request QuestionModifyRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		Fail(c, 400, "请求错误")
@@ -180,6 +180,10 @@ func (*QuestionController) Put(c *gin.Context) {
 		log.Error(err)
 		Fail(c, 500, "修改提问失败")
 		return
+	}
+	this.eventChan <- SSEvent{
+		Type: SSEventArchive,
+		Data: q.ID,
 	}
 	Success(c, nil)
 }
