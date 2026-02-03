@@ -1,0 +1,332 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+:root {
+  --radius: 0.625rem;
+  /* Warm linen / fabric palette */
+  --background: #f5f0e8;
+  --foreground: #3d352b;
+  --card: #faf7f2;
+  --card-foreground: #3d352b;
+  --popover: #faf7f2;
+  --popover-foreground: #3d352b;
+  --primary: #8b6f47;
+  --primary-foreground: #faf7f2;
+  --secondary: #ece6db;
+  --secondary-foreground: #5a4e3f;
+  --muted: #ece6db;
+  --muted-foreground: #8c7e6e;
+  --accent: #e8dfd2;
+  --accent-foreground: #5a4e3f;
+  --destructive: #b85450;
+  --border: #d6ccbd;
+  --input: #d6ccbd;
+  --ring: #a08b72;
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: #faf7f2;
+  --sidebar-foreground: #3d352b;
+  --sidebar-primary: #8b6f47;
+  --sidebar-primary-foreground: #faf7f2;
+  --sidebar-accent: #ece6db;
+  --sidebar-accent-foreground: #5a4e3f;
+  --sidebar-border: #d6ccbd;
+  --sidebar-ring: #a08b72;
+  /* Fabric-specific tokens */
+  --fabric-stitch: #b8a68e;
+  --fabric-shadow: rgba(139, 111, 71, 0.08);
+  --fabric-grain: #e8e0d4;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ── Fabric texture utilities ── */
+
+/* Linen weave background via repeating gradients */
+.fabric-linen {
+  background-color: var(--background);
+  background-image:
+    url(/fabric-texture.svg),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      var(--fabric-grain) 3px,
+      var(--fabric-grain) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 3px,
+      var(--fabric-grain) 3px,
+      var(--fabric-grain) 4px
+    );
+  background-size: 100px 100px, 4px 4px, 4px 4px;
+  background-attachment: fixed;
+}
+
+/* Stitched border effect */
+.fabric-stitch {
+  border: 2px dashed var(--fabric-stitch);
+  box-shadow:
+    0 0 0 4px var(--card),
+    0 0 0 5px var(--fabric-stitch);
+}
+
+/* Soft fabric shadow for elevated elements */
+.fabric-shadow {
+  box-shadow:
+    0 1px 3px var(--fabric-shadow),
+    0 4px 12px var(--fabric-shadow);
+}
+
+.fabric-shadow-hover {
+  transition: box-shadow 220ms ease, transform 220ms ease;
+}
+.fabric-shadow-hover:hover {
+  box-shadow:
+    0 2px 6px var(--fabric-shadow),
+    0 8px 24px rgba(139, 111, 71, 0.12);
+  transform: translateY(-1px);
+}
+
+/* Fabric label style (for CTAs) */
+.fabric-label {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1.5px dashed rgba(255, 255, 255, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 2px 6px var(--fabric-shadow);
+  transition: box-shadow 220ms ease, transform 200ms ease;
+}
+.fabric-label:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 3px 10px rgba(139, 111, 71, 0.18);
+}
+.fabric-label:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 1px 3px var(--fabric-shadow);
+}
+
+/* Canvas card surface */
+.fabric-card {
+  background-color: var(--card);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 5px,
+      rgba(139, 111, 71, 0.03) 5px,
+      rgba(139, 111, 71, 0.03) 6px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 5px,
+      rgba(139, 111, 71, 0.03) 5px,
+      rgba(139, 111, 71, 0.03) 6px
+    );
+}
+
+/* Sewn pill for tags/badges */
+.fabric-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: var(--secondary);
+  border: 1.5px dashed var(--fabric-stitch);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: background 220ms ease, box-shadow 220ms ease;
+}
+.fabric-pill:hover {
+  background: var(--accent);
+  box-shadow: 0 2px 8px var(--fabric-shadow);
+}
+
+/* Navbar fabric style */
+.fabric-nav {
+  background-color: var(--primary);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.06) 2px,
+      rgba(0, 0, 0, 0.06) 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.06) 2px,
+      rgba(0, 0, 0, 0.06) 3px
+    );
+  box-shadow: 0 2px 8px rgba(139, 111, 71, 0.15);
+}
+
+/* Input field with inset stitch */
+.fabric-input {
+  background: var(--card);
+  border: 1.5px dashed var(--fabric-stitch);
+  transition: border-color 220ms ease, box-shadow 220ms ease;
+}
+.fabric-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(139, 111, 71, 0.1);
+  outline: none;
+}
+
+/* Gentle cross-hatch overlay for form areas */
+.fabric-form {
+  background-color: var(--card);
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(139, 111, 71, 0.02) 10px,
+      rgba(139, 111, 71, 0.02) 11px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 10px,
+      rgba(139, 111, 71, 0.02) 10px,
+      rgba(139, 111, 71, 0.02) 11px
+    );
+  border: 2px dashed var(--fabric-stitch);
+  box-shadow:
+    0 0 0 5px var(--card),
+    0 0 0 6px var(--fabric-stitch),
+    0 4px 16px var(--fabric-shadow);
+}
+
+/* Custom scrollbar theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fabric-stitch) var(--secondary);
+}
+
+*::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--secondary);
+  border-left: 1px dashed var(--border);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--fabric-stitch);
+  border: 2px solid var(--secondary);
+  border-radius: 6px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: #6b5637;
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--secondary);
+}

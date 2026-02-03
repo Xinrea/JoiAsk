@@ -1,0 +1,16 @@
+{
+  "name": "joiask",
+  "version": "1.0.0",
+  "description": "JoiAsk Question Box",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:admin": "cd admin && npm run dev -- -p 3001",
+    "dev:backend": "go run cmd/cmd.go",
+    "build:frontend": "cd frontend && npm run build",
+    "build:admin": "cd admin && npm run build",
+    "build": "npm run build:frontend && npm run build:admin"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

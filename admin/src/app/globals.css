@@ -1,0 +1,359 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+/* 织物质感设计系统：亚麻/帆布/牛仔 */
+:root {
+  --radius: 0.5rem;
+  /* 温暖中性：亚麻背景、帆布卡片、深棕文字 */
+  --background: #f5f1e8;
+  --foreground: #3d3934;
+  --card: #faf7f1;
+  --card-foreground: #3d3934;
+  --popover: #faf7f1;
+  --popover-foreground: #3d3934;
+  --primary: #5c5349;
+  --primary-foreground: #faf7f1;
+  --secondary: #e8e2d8;
+  --secondary-foreground: #3d3934;
+  --muted: #ebe6de;
+  --muted-foreground: #6b635b;
+  --accent: #e0d9ce;
+  --accent-foreground: #3d3934;
+  --destructive: #b85450;
+  --border: #ddd6cc;
+  --input: #e2ddd4;
+  --ring: #8b7d6b;
+  --chart-1: #7d6e5c;
+  --chart-2: #6b7d6b;
+  --chart-3: #6b6b7d;
+  --chart-4: #8b7355;
+  --chart-5: #6b5c4d;
+  /* 织布专用 */
+  --fabric-shadow-soft: 0 2px 12px rgba(61, 57, 52, 0.06),
+    0 4px 24px rgba(61, 57, 52, 0.04);
+  --fabric-shadow-hover: 0 4px 16px rgba(61, 57, 52, 0.08),
+    0 8px 32px rgba(61, 57, 52, 0.05);
+  --fabric-shadow-active: 0 1px 4px rgba(61, 57, 52, 0.08);
+  --fabric-stitch: rgba(255, 255, 255, 0.6);
+  --fabric-transition: 220ms ease;
+  /* 侧栏：深帆布/牛仔感 */
+  --sidebar: #4a4540;
+  --sidebar-foreground: #f5f1e8;
+  --sidebar-primary: #c4b8a8;
+  --sidebar-primary-foreground: #3d3934;
+  --sidebar-accent: rgba(255, 255, 255, 0.08);
+  --sidebar-accent-foreground: #f5f1e8;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: rgba(196, 184, 168, 0.5);
+}
+
+.dark {
+  --background: #2d2a26;
+  --foreground: #e8e4dc;
+  --card: #36322e;
+  --card-foreground: #e8e4dc;
+  --popover: #36322e;
+  --popover-foreground: #e8e4dc;
+  --primary: #c4b8a8;
+  --primary-foreground: #2d2a26;
+  --secondary: #3d3934;
+  --secondary-foreground: #e8e4dc;
+  --muted: #3d3934;
+  --muted-foreground: #a39e96;
+  --accent: #3d3934;
+  --accent-foreground: #e8e4dc;
+  --destructive: #c46b66;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: rgba(196, 184, 168, 0.5);
+  --sidebar: #252220;
+  --sidebar-foreground: #e8e4dc;
+  --sidebar-primary: #c4b8a8;
+  --sidebar-primary-foreground: #2d2a26;
+  --sidebar-accent: rgba(255, 255, 255, 0.06);
+  --sidebar-accent-foreground: #e8e4dc;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-ring: rgba(196, 184, 168, 0.4);
+  --fabric-shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.2);
+  --fabric-shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.25);
+  --fabric-shadow-active: 0 1px 4px rgba(0, 0, 0, 0.2);
+  --fabric-stitch: rgba(255, 255, 255, 0.1);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* 亚麻/帆布编织纹理：交叉线条模拟布料质感 */
+    background-image:
+      /* 细密横向纹理 */
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(61, 57, 52, 0.025) 2px,
+        rgba(61, 57, 52, 0.025) 3px
+      ),
+      /* 细密纵向纹理 */
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 2px,
+        rgba(61, 57, 52, 0.025) 2px,
+        rgba(61, 57, 52, 0.025) 3px
+      ),
+      /* 斜向编织纹理 */
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 4px,
+        rgba(61, 57, 52, 0.012) 4px,
+        rgba(61, 57, 52, 0.012) 5px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 4px,
+        rgba(61, 57, 52, 0.012) 4px,
+        rgba(61, 57, 52, 0.012) 5px
+      ),
+      /* 细微噪点模拟布料颗粒 */
+      radial-gradient(circle at 20% 50%, rgba(61, 57, 52, 0.008) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(61, 57, 52, 0.008) 0%, transparent 50%);
+    background-size: 6px 6px, 6px 6px, 12px 12px, 12px 12px, 100px 100px, 120px 120px;
+  }
+
+  .dark body {
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255, 255, 255, 0.015) 2px,
+        rgba(255, 255, 255, 0.015) 3px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 2px,
+        rgba(255, 255, 255, 0.015) 2px,
+        rgba(255, 255, 255, 0.015) 3px
+      ),
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 4px,
+        rgba(255, 255, 255, 0.008) 4px,
+        rgba(255, 255, 255, 0.008) 5px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 4px,
+        rgba(255, 255, 255, 0.008) 4px,
+        rgba(255, 255, 255, 0.008) 5px
+      );
+    background-size: 6px 6px, 6px 6px, 12px 12px, 12px 12px;
+  }
+}
+
+/* 缝线风格边框：模拟手工缝制的虚线效果 */
+.fabric-border {
+  box-shadow:
+    inset 1px 1px 0 var(--fabric-stitch),
+    inset -1px -1px 0 rgba(61, 57, 52, 0.04),
+    0 1px 0 rgba(61, 57, 52, 0.06);
+}
+
+/* 缝线虚线边框（用于标签/徽章） */
+.fabric-stitched {
+  border: 1.5px dashed rgba(61, 57, 52, 0.2);
+  box-shadow:
+    inset 0 1px 0 var(--fabric-stitch),
+    0 2px 4px rgba(61, 57, 52, 0.06);
+}
+
+.dark .fabric-stitched {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* 柔和阴影与过渡 */
+.fabric-shadow {
+  box-shadow: var(--fabric-shadow-soft);
+  transition: box-shadow var(--fabric-transition),
+    transform var(--fabric-transition);
+}
+.fabric-shadow:hover {
+  box-shadow: var(--fabric-shadow-hover);
+  transform: translateY(-1px);
+}
+.fabric-shadow:active {
+  box-shadow: var(--fabric-shadow-active);
+  transform: translateY(0);
+}
+
+/* 布料标签样式：模拟缝制在衣物上的标签 */
+.fabric-label {
+  position: relative;
+  padding: 0.375rem 0.875rem;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(250, 247, 241, 0.95) 100%);
+  border: 1.5px dashed rgba(61, 57, 52, 0.25);
+  border-radius: 0.375rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 0 rgba(61, 57, 52, 0.05),
+    0 2px 6px rgba(61, 57, 52, 0.08),
+    0 1px 2px rgba(61, 57, 52, 0.06);
+  transition: all 200ms ease-out;
+}
+
+.fabric-label:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(61, 57, 52, 0.06),
+    0 4px 12px rgba(61, 57, 52, 0.12),
+    0 2px 4px rgba(61, 57, 52, 0.08);
+  border-color: rgba(61, 57, 52, 0.3);
+}
+
+.fabric-label:active {
+  transform: translateY(0);
+  box-shadow:
+    inset 0 1px 2px rgba(61, 57, 52, 0.1),
+    0 1px 3px rgba(61, 57, 52, 0.08);
+}
+
+.dark .fabric-label {
+  background: linear-gradient(135deg,
+    rgba(61, 57, 52, 0.6) 0%,
+    rgba(54, 50, 46, 0.7) 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* 布料纹理卡片 */
+.fabric-card {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(61, 57, 52, 0.02) 1px,
+      rgba(61, 57, 52, 0.02) 2px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 1px,
+      rgba(61, 57, 52, 0.02) 1px,
+      rgba(61, 57, 52, 0.02) 2px
+    );
+  background-size: 4px 4px;
+}
+
+.dark .fabric-card {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(255, 255, 255, 0.015) 1px,
+      rgba(255, 255, 255, 0.015) 2px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 1px,
+      rgba(255, 255, 255, 0.015) 1px,
+      rgba(255, 255, 255, 0.015) 2px
+    );
+  background-size: 4px 4px;
+}
+
+/* Custom scrollbar theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fabric-stitch) var(--secondary);
+}
+
+*::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--secondary);
+  border-left: 1px solid var(--border);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(196, 184, 168, 0.3);
+  border: 2px solid var(--secondary);
+  border-radius: 6px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(196, 184, 168, 0.5);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: rgba(196, 184, 168, 0.7);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--secondary);
+}
+

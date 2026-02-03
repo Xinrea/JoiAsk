@@ -8,6 +8,7 @@ import (
 	"joiask-backend/internal/database"
 	"joiask-backend/internal/storage"
 	"joiask-backend/pkg/util"
+	"net/http"
 	"path"
 	"strconv"
 	"strings"
@@ -17,15 +18,18 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sse"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm/clause"
 )
 
 // 1 for emoji op
 // 2 for archive op
+// 3 for cursor op
 const (
 	SSEventEmoji = iota + 1
 	SSEventArchive
+	SSEventCursor
 )
 
 type SSEvent struct {
@@ -42,12 +46,22 @@ type QuestionController struct {
 	eventChan    chan SSEvent
 	clients      map[chan SSEvent]bool
 	clientsMutex sync.Mutex
+	// WebSocket clients
+	wsClients      map[*websocket.Conn]bool
+	wsClientsMutex sync.Mutex
+}
+
+var wsUpgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true // Allow all origins for development
+	},
 }
 
 func NewQuestionController() *QuestionController {
 	controller := &QuestionController{
 		eventChan: make(chan SSEvent),
 		clients:   make(map[chan SSEvent]bool),
+		wsClients: make(map[*websocket.Conn]bool),
 	}
 	// Start broadcast goroutine
 	go controller.broadcast()
@@ -56,7 +70,7 @@ func NewQuestionController() *QuestionController {
 
 func (this *QuestionController) broadcast() {
 	for event := range this.eventChan {
-		// Broadcast to all clients
+		// Broadcast to SSE clients
 		this.clientsMutex.Lock()
 		for client := range this.clients {
 			select {
@@ -68,6 +82,24 @@ func (this *QuestionController) broadcast() {
 			}
 		}
 		this.clientsMutex.Unlock()
+
+		// Broadcast to WebSocket clients
+		this.wsClientsMutex.Lock()
+		eventJson, err := json.Marshal(event)
+		if err != nil {
+			log.Error("Failed to marshal event for WebSocket:", err)
+			this.wsClientsMutex.Unlock()
+			continue
+		}
+		for client := range this.wsClients {
+			err := client.WriteMessage(websocket.TextMessage, eventJson)
+			if err != nil {
+				log.Error("Failed to send WebSocket message:", err)
+				client.Close()
+				delete(this.wsClients, client)
+			}
+		}
+		this.wsClientsMutex.Unlock()
 	}
 }
 
@@ -490,4 +522,131 @@ func (this *QuestionController) SSE(c *gin.Context) {
 
 	// Cleanup when connection is closed
 	log.Info("SSE connection closed")
+}
+
+// WebSocket handler for real-time updates
+func (this *QuestionController) WebSocket(c *gin.Context) {
+	conn, err := wsUpgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		log.Error("Failed to upgrade to WebSocket:", err)
+		return
+	}
+
+	// Generate a unique client ID
+	clientID := fmt.Sprintf("%d", time.Now().UnixNano())
+
+	// Add client to the connection manager
+	this.wsClientsMutex.Lock()
+	this.wsClients[conn] = true
+	this.wsClientsMutex.Unlock()
+
+	log.Info("WebSocket client connected:", clientID)
+
+	// Send initial connection message with client ID
+	conn.WriteJSON(map[string]string{"type": "connected", "clientId": clientID})
+
+	// Keep connection alive and handle client messages
+	go func() {
+		defer func() {
+			// Broadcast cursor leave event
+			this.broadcastCursorLeave(clientID, conn)
+
+			this.wsClientsMutex.Lock()
+			delete(this.wsClients, conn)
+			this.wsClientsMutex.Unlock()
+			conn.Close()
+			log.Info("WebSocket client disconnected:", clientID)
+		}()
+
+		// Set up ping/pong for keepalive
+		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		conn.SetPongHandler(func(string) error {
+			conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+			return nil
+		})
+
+		for {
+			_, message, err := conn.ReadMessage()
+			if err != nil {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					log.Error("WebSocket error:", err)
+				}
+				break
+			}
+
+			// Handle incoming messages (cursor updates)
+			var msg map[string]interface{}
+			if err := json.Unmarshal(message, &msg); err != nil {
+				continue
+			}
+
+			if msg["type"] == "cursor" {
+				// Broadcast cursor position to other clients
+				this.broadcastCursor(clientID, msg, conn)
+			}
+		}
+	}()
+
+	// Send periodic pings
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				this.wsClientsMutex.Lock()
+				if _, ok := this.wsClients[conn]; !ok {
+					this.wsClientsMutex.Unlock()
+					return
+				}
+				if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+					this.wsClientsMutex.Unlock()
+					return
+				}
+				this.wsClientsMutex.Unlock()
+			}
+		}
+	}()
+}
+
+// Broadcast cursor position to all clients except sender
+func (this *QuestionController) broadcastCursor(clientID string, msg map[string]interface{}, sender *websocket.Conn) {
+	msg["clientId"] = clientID
+
+	this.wsClientsMutex.Lock()
+	defer this.wsClientsMutex.Unlock()
+
+	msgJson, err := json.Marshal(msg)
+	if err != nil {
+		return
+	}
+
+	for client := range this.wsClients {
+		if client != sender {
+			client.WriteMessage(websocket.TextMessage, msgJson)
+		}
+	}
+}
+
+// Broadcast cursor leave event
+func (this *QuestionController) broadcastCursorLeave(clientID string, sender *websocket.Conn) {
+	msg := map[string]interface{}{
+		"type":     "cursor_leave",
+		"clientId": clientID,
+	}
+
+	this.wsClientsMutex.Lock()
+	defer this.wsClientsMutex.Unlock()
+
+	msgJson, err := json.Marshal(msg)
+	if err != nil {
+		return
+	}
+
+	for client := range this.wsClients {
+		if client != sender {
+			client.WriteMessage(websocket.TextMessage, msgJson)
+		}
+	}
 }
