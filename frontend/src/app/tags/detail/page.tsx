@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import {
@@ -16,10 +16,9 @@ import { GoToTop } from '@/components/go-to-top';
 import { getQuestions, getInfo, Question } from '@/lib/api';
 import { useWebSocket } from '@/hooks/useWebSocket';
 
-export default function TagDetailPage() {
-  const params = useParams();
+function TagDetailContent() {
   const searchParams = useSearchParams();
-  const tagId = params.id as string;
+  const tagId = searchParams.get('id') || '';
   const tagName = searchParams.get('name') || '';
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -176,5 +175,13 @@ export default function TagDetailPage() {
 
       <GoToTop />
     </div>
+  );
+}
+
+export default function TagDetailPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-12 text-primary">加载中...</div>}>
+      <TagDetailContent />
+    </Suspense>
   );
 }

@@ -26,7 +26,7 @@ export default function TagsPage() {
           >
             <div className="flex items-center justify-between px-5 py-2.5">
               <Link
-                href={`/tags/${tag.id}?name=${encodeURIComponent(tag.tag_name)}`}
+                href={`/tags/detail?id=${tag.id}&name=${encodeURIComponent(tag.tag_name)}`}
                 className="text-primary hover:underline transition-colors duration-200"
               >
                 #{tag.tag_name}
