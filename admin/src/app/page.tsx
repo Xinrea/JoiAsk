@@ -26,7 +26,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      router.push("/dashboard");
+      router.push("/admin/dashboard");
     }
   }, [authLoading, isAuthenticated, router]);
 
@@ -52,7 +52,7 @@ export default function LoginPage() {
       if (res.code === 200) {
         login(res.data);
         // 使用整页跳转，确保带上服务端设置的 cookie 并正确进入后台
-        window.location.href = "/dashboard";
+        window.location.href = "/admin/dashboard";
         return;
       } else {
         setError(res.message || "登录失败");
