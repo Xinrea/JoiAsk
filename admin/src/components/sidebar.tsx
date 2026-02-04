@@ -89,14 +89,14 @@ export function Sidebar() {
             "inset 0 1px 0 rgba(255,255,255,0.06), 0 -1px 0 rgba(0,0,0,0.1)",
         }}
       >
-        <Link
+        <a
           href="/"
           target="_blank"
           className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground/80 transition-all duration-[200ms] ease-out hover:bg-sidebar-accent hover:text-sidebar-foreground hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
         >
           <Home className="h-5 w-5 shrink-0 opacity-90" />
           回到提问箱
-        </Link>
+        </a>
         <button
           type="button"
           onClick={logout}
