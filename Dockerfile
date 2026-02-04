@@ -33,5 +33,5 @@ COPY nginx.conf /etc/nginx/nginx.conf
 ENV GIN_MODE=release
 COPY start.sh ./
 RUN chmod +x start.sh
-EXPOSE 80
+EXPOSE 8080
 CMD ["./start.sh"]
