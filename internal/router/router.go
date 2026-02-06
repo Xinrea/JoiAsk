@@ -15,6 +15,7 @@ import (
 
 func Run() {
 	r := gin.Default()
+	r.MaxMultipartMemory = 30 << 20 // 30 MB
 	r.Use(gin.Recovery())
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:3001", "*"},
