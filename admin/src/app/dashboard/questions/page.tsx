@@ -181,7 +181,11 @@ export default function QuestionsPage() {
         is_publish: field === "is_publish" ? value : question.is_publish,
       });
       if (res.code === 200) {
-        loadQuestions();
+        setQuestions((prev) =>
+          prev.map((q) =>
+            q.id === question.id ? { ...q, [field]: value } : q
+          )
+        );
       }
     } catch (error) {
       console.error("Failed to update question:", error);
@@ -198,7 +202,11 @@ export default function QuestionsPage() {
         is_publish: question.is_publish,
       });
       if (res.code === 200) {
-        loadQuestions();
+        setQuestions((prev) =>
+          prev.map((q) =>
+            q.id === question.id ? { ...q, tag_id: newTagId } : q
+          )
+        );
       }
     } catch (error) {
       console.error("Failed to update question:", error);
