@@ -1,0 +1,46 @@
+{
+    # 全局配置
+    admin off
+    auto_https off
+}
+
+:80 {
+    # 请求体大小限制
+    request_body {
+        max_size 30MB
+    }
+
+    # 后端 API (包括 WebSocket)
+    handle /api/* {
+        reverse_proxy localhost:8080 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+        }
+    }
+
+    # 管理后台静态文件
+    handle /admin* {
+        root * ./admin
+        try_files {path} {path}/ /admin/index.html
+        file_server
+    }
+
+    # 上传的图片
+    handle /upload-img/* {
+        root * ./frontend/upload-img
+        uri strip_prefix /upload-img
+        file_server
+    }
+
+    # 前端开发服务器（默认路由）
+    handle {
+        reverse_proxy localhost:3000
+    }
+
+    # 日志
+    log {
+        output stdout
+        format console
+    }
+}

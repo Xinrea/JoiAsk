@@ -33,18 +33,4 @@ cd frontend && npm run dev
 
 Caddyfile 已提供在项目根目录，只需 `caddy run` 即可启动本地服务器。
 
-Caddyfile 的内容如下所示，十分简单，将 `/api/*` 指向后端 gin server；将其余请求指向前端 dev server。如果你更改了前后端默认端口，Caddyfile 中的内容也应同步更改。
-
-```
-localhost
-
-handle /api/* {
-    reverse_proxy /api/* :8080
-}
-
-handle * {
-    reverse_proxy :5173
-}
-```
-
 之后浏览器访问本地 localhost 即能够正常预览页面。

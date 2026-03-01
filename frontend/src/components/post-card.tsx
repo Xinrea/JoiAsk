@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, MouseEvent, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Question, updateQuestion, EmojiData } from '@/lib/api';
 import { EmojiPicker } from './emoji-picker';
+import { ImagePreview } from './image-preview';
 
 interface RemoteCursor {
   clientId: string;
@@ -456,16 +457,10 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
 
       {/* Full Image Preview */}
       {previewImage && (
-        <div
-          className="fixed inset-0 bg-black z-[9999] flex items-center justify-center cursor-pointer"
-          onClick={() => setPreviewImage(null)}
-        >
-          <img
-            src={previewImage}
-            alt="Preview"
-            className="max-w-full max-h-full object-contain"
-          />
-        </div>
+        <ImagePreview
+          src={previewImage}
+          onClose={() => setPreviewImage(null)}
+        />
       )}
 
       <style jsx>{`
