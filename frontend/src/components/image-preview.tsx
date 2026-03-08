@@ -1,14 +1,30 @@
 'use client';
 
 import { useState, useRef, useEffect, MouseEvent, TouchEvent } from 'react';
-import { X, ZoomIn, ZoomOut, RotateCw, Download } from 'lucide-react';
+import { X, ZoomIn, ZoomOut, RotateCw, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ImagePreviewProps {
   src: string;
+  images?: string[];
+  currentIndex?: number;
   onClose: () => void;
+  onIndexChange?: (index: number) => void;
 }
 
-export function ImagePreview({ src, onClose }: ImagePreviewProps) {
+export function ImagePreview({ src, images, currentIndex = 0, onClose, onIndexChange }: ImagePreviewProps) {
+  const hasMultiple = images && images.length > 1;
+
+  const goToPrev = () => {
+    if (!images || !onIndexChange) return;
+    const newIndex = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
+    onIndexChange(newIndex);
+  };
+
+  const goToNext = () => {
+    if (!images || !onIndexChange) return;
+    const newIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
+    onIndexChange(newIndex);
+  };
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0);
@@ -145,12 +161,18 @@ export function ImagePreview({ src, onClose }: ImagePreviewProps) {
         case '0':
           handleReset();
           break;
+        case 'ArrowLeft':
+          if (hasMultiple) goToPrev();
+          break;
+        case 'ArrowRight':
+          if (hasMultiple) goToNext();
+          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [onClose, hasMultiple, currentIndex]);
 
   return (
     <div
@@ -206,6 +228,35 @@ export function ImagePreview({ src, onClose }: ImagePreviewProps) {
         {Math.round(scale * 100)}%
       </div>
 
+      {/* Prev button */}
+      {hasMultiple && (
+        <button
+          onClick={(e) => { e.stopPropagation(); goToPrev(); }}
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors"
+          title="上一张 (←)"
+        >
+          <ChevronLeft className="w-6 h-6 text-white" />
+        </button>
+      )}
+
+      {/* Next button */}
+      {hasMultiple && (
+        <button
+          onClick={(e) => { e.stopPropagation(); goToNext(); }}
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors"
+          title="下一张 (→)"
+        >
+          <ChevronRight className="w-6 h-6 text-white" />
+        </button>
+      )}
+
+      {/* Image counter */}
+      {hasMultiple && (
+        <div className="absolute bottom-14 left-1/2 transform -translate-x-1/2 px-3 py-1.5 bg-white/10 rounded-lg backdrop-blur-sm text-white text-sm">
+          {currentIndex + 1} / {images.length}
+        </div>
+      )}
+
       {/* Image container */}
       <div
         className="relative w-full h-full flex items-center justify-center overflow-hidden"
@@ -228,7 +279,7 @@ export function ImagePreview({ src, onClose }: ImagePreviewProps) {
 
       {/* Instructions */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm text-white text-sm text-center">
-        拖拽移动 | 滚轮缩放 | +/- 缩放 | R 旋转 | 0 重置 | ESC 关闭
+        拖拽移动 | 滚轮缩放 | +/- 缩放 | R 旋转 | 0 重置 | ESC 关闭{hasMultiple ? ' | ←/→ 切换' : ''}
       </div>
     </div>
   );
