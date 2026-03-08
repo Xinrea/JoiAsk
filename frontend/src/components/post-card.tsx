@@ -458,6 +458,7 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
       {/* Full Image Preview */}
       {previewImage !== null && (
         <ImagePreview
+          key={imageList[previewImage]}
           src={imageList[previewImage]}
           images={imageList}
           currentIndex={previewImage}

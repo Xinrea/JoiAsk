@@ -40,13 +40,6 @@ export function ImagePreview({ src, images, currentIndex = 0, onClose, onIndexCh
   const pinchStartDistRef = useRef<number | null>(null);
   const pinchStartScaleRef = useRef(1);
 
-  // Reset on image change
-  useEffect(() => {
-    setScale(1);
-    setPosition({ x: 0, y: 0 });
-    setRotation(0);
-  }, [src]);
-
   // Lock body scroll when preview is open
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
@@ -106,7 +99,7 @@ export function ImagePreview({ src, images, currentIndex = 0, onClose, onIndexCh
   };
 
   // Touch: compute distance between two touches
-  const getTouchDistance = (t1: globalThis.Touch, t2: globalThis.Touch) => {
+  const getTouchDistance = (t1: React.Touch, t2: React.Touch) => {
     const dx = t1.clientX - t2.clientX;
     const dy = t1.clientY - t2.clientY;
     return Math.sqrt(dx * dx + dy * dy);
@@ -325,7 +318,7 @@ export function ImagePreview({ src, images, currentIndex = 0, onClose, onIndexCh
       {/* Image counter */}
       {hasMultiple && (
         <div className="absolute bottom-14 left-1/2 transform -translate-x-1/2 px-3 py-1.5 bg-white/10 rounded-lg backdrop-blur-sm text-white text-sm">
-          {currentIndex + 1} / {images.length}
+          {currentIndex + 1} / {images!.length}
         </div>
       )}
 
