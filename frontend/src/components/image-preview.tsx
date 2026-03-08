@@ -12,7 +12,7 @@ interface ImagePreviewProps {
 }
 
 export function ImagePreview({ src, images, currentIndex = 0, onClose, onIndexChange }: ImagePreviewProps) {
-  const hasMultiple = images && images.length > 1;
+  const hasMultiple = (images?.length ?? 0) > 1;
 
   const goToPrev = useCallback(() => {
     if (!images || !onIndexChange) return;
