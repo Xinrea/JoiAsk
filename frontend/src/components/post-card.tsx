@@ -95,7 +95,7 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
   const contentRef = useRef<HTMLDivElement>(null);
   const [scrollEnd, setScrollEnd] = useState(true);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<number | null>(null);
   const [isArchived, setIsArchived] = useState(data.is_archive);
 
   // 3D tilt state (using ref to avoid re-renders)
@@ -446,7 +446,7 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
                     src={image}
                     alt={`Image ${index + 1}`}
                     className="absolute top-0 left-0 w-full h-full object-cover transition-transform hover:scale-105"
-                    onClick={() => setPreviewImage(image)}
+                    onClick={() => setPreviewImage(index)}
                   />
                 </div>
               ))}
@@ -456,10 +456,13 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
       )}
 
       {/* Full Image Preview */}
-      {previewImage && (
+      {previewImage !== null && (
         <ImagePreview
-          src={previewImage}
+          src={imageList[previewImage]}
+          images={imageList}
+          currentIndex={previewImage}
           onClose={() => setPreviewImage(null)}
+          onIndexChange={(index) => setPreviewImage(index)}
         />
       )}
 
