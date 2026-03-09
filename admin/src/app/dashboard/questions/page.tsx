@@ -67,7 +67,7 @@ function renderContent(content: string) {
   );
   // Replace URLs with links
   rendered = rendered.replace(
-    /https?:\/\/[^\s<]+/g,
+    /https?:\/\/[^\s<\[]+/g,
     (match) => `<a href="${match}" target="_blank" rel="noopener noreferrer" style="color:#00a1d6;text-decoration:underline;">${match}</a>`
   );
   // Replace BV codes with bilibili links (only if not already linked)
