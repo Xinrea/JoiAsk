@@ -324,7 +324,7 @@ export function ImagePreview({ src, images, currentIndex = 0, onClose, onIndexCh
 
       {/* Image container */}
       <div
-        className="relative w-full h-full flex items-center justify-center overflow-hidden"
+        className="absolute inset-0 top-16 bottom-16 flex items-center justify-center overflow-hidden px-16"
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
         style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
@@ -333,7 +333,7 @@ export function ImagePreview({ src, images, currentIndex = 0, onClose, onIndexCh
           ref={imageRef}
           src={src}
           alt="Preview"
-          className="max-w-[90vw] max-h-[85vh] sm:max-w-none sm:max-h-none object-contain select-none"
+          className="max-w-full max-h-full object-contain select-none"
           draggable={false}
           style={{
             transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
