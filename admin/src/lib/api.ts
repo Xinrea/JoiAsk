@@ -37,6 +37,10 @@ export interface Config {
   announcement: string;
 }
 
+export interface Settings {
+  deepseek_api_key: string;
+}
+
 export interface Statistics {
   total_questions: number;
   total_tags: number;
@@ -101,6 +105,24 @@ export async function updateConfig(config: Config): Promise<ApiResponse<null>> {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(config),
+  });
+  return res.json();
+}
+
+export async function getSettings(): Promise<ApiResponse<Settings>> {
+  const res = await fetch(`${API_BASE}/settings`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  return res.json();
+}
+
+export async function updateSettings(settings: Settings): Promise<ApiResponse<Settings>> {
+  const res = await fetch(`${API_BASE}/settings`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings),
   });
   return res.json();
 }

@@ -45,7 +45,8 @@ type Admin struct {
 
 type Config struct {
 	BaseModel
-	Announcement string `json:"announcement"`
+	Announcement   string `json:"announcement"`
+	DeepSeekAPIKey string `json:"-"`
 }
 
 func (t Tag) Json() map[string]interface{} {

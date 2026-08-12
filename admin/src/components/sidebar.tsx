@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Tag,
   Users,
+  Settings,
   Home,
   LogOut,
 } from "lucide-react";
@@ -18,6 +19,7 @@ const navItems = [
   { href: "/dashboard/questions", label: "提问管理", icon: MessageSquare },
   { href: "/dashboard/tags", label: "话题管理", icon: Tag },
   { href: "/dashboard/users", label: "账号管理", icon: Users },
+  { href: "/dashboard/settings", label: "设置", icon: Settings },
 ];
 
 export function Sidebar() {

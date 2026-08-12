@@ -69,6 +69,8 @@ func Run() {
 		{
 			api.GET("/config", configController.Get)
 			api.PUT("/config", authMiddleware, configController.Put)
+			api.GET("/settings", authMiddleware, configController.GetSettings)
+			api.PUT("/settings", authMiddleware, configController.PutSettings)
 		}
 		// Statistics
 		{
