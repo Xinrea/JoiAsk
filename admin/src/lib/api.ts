@@ -27,6 +27,7 @@ export interface Question {
   is_rainbow: boolean;
   is_archive: boolean;
   is_publish: boolean;
+  is_spam: boolean;
   emojis: string;
   likes: number;
   created_at: string;
@@ -35,6 +36,11 @@ export interface Question {
 
 export interface Config {
   announcement: string;
+}
+
+export interface Settings {
+  deepseek_api_key: string;
+  spam_prompt: string;
 }
 
 export interface Statistics {
@@ -105,12 +111,31 @@ export async function updateConfig(config: Config): Promise<ApiResponse<null>> {
   return res.json();
 }
 
+export async function getSettings(): Promise<ApiResponse<Settings>> {
+  const res = await fetch(`${API_BASE}/settings`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  return res.json();
+}
+
+export async function updateSettings(settings: Settings): Promise<ApiResponse<Settings>> {
+  const res = await fetch(`${API_BASE}/settings`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings),
+  });
+  return res.json();
+}
+
 export async function getQuestions(params: {
   page?: number;
   page_size?: number;
   order_by?: string;
   order?: string;
   tag_id?: number;
+  is_spam?: boolean;
 }): Promise<ApiResponse<QuestionsResponse>> {
   const searchParams = new URLSearchParams();
   if (params.page) searchParams.set('page', params.page.toString());
@@ -118,6 +143,7 @@ export async function getQuestions(params: {
   if (params.order_by) searchParams.set('order_by', params.order_by);
   if (params.order) searchParams.set('order', params.order);
   if (params.tag_id) searchParams.set('tag_id', params.tag_id.toString());
+  if (params.is_spam !== undefined) searchParams.set('is_spam', params.is_spam.toString());
 
   const res = await fetch(`${API_BASE}/question?${searchParams.toString()}`, {
     method: 'GET',
@@ -132,6 +158,7 @@ export async function updateQuestion(id: number, data: {
   is_rainbow?: boolean;
   is_archive?: boolean;
   is_publish?: boolean;
+  is_spam?: boolean;
 }): Promise<ApiResponse<null>> {
   const res = await fetch(`${API_BASE}/question/${id}`, {
     method: 'PUT',

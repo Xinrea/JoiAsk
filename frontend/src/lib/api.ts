@@ -25,6 +25,7 @@ export interface Question {
   is_rainbow: boolean;
   is_archive: boolean;
   is_publish: boolean;
+  is_spam: boolean;
   emojis: string;
   likes: number;
   created_at: string;

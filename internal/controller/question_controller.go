@@ -2,10 +2,12 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"joiask-backend/internal/database"
+	"joiask-backend/internal/deepseek"
 	"joiask-backend/internal/storage"
 	"joiask-backend/pkg/util"
 	"net/http"
@@ -114,14 +116,16 @@ type QuestionRequest struct {
 	Rainbow  bool   `form:"rainbow"`
 	Archive  bool   `form:"archive"`
 	Publish  bool   `form:"publish"`
+	Spam     bool   `form:"is_spam"`
 }
 
 type QuestionModifyRequest struct {
-	TagID     int  `json:"tag_id"`
-	IsHide    bool `json:"is_hide"`
-	IsRainbow bool `json:"is_rainbow"`
-	IsArchive bool `json:"is_archive"`
-	IsPublish bool `json:"is_publish"`
+	TagID     int   `json:"tag_id"`
+	IsHide    bool  `json:"is_hide"`
+	IsRainbow bool  `json:"is_rainbow"`
+	IsArchive bool  `json:"is_archive"`
+	IsPublish bool  `json:"is_publish"`
+	IsSpam    *bool `json:"is_spam"`
 }
 
 // Get questions
@@ -157,6 +161,9 @@ func (*QuestionController) Get(c *gin.Context) {
 	}
 	if _, ok := c.GetQuery("archive"); ok {
 		tx = tx.Where("is_archive = ?", request.Archive)
+	}
+	if _, ok := c.GetQuery("is_spam"); ok {
+		tx = tx.Where("is_spam = ?", request.Spam)
 	}
 	if _, ok := c.GetQuery("publish"); ok {
 		// Normal users can only see published questions
@@ -207,6 +214,9 @@ func (this *QuestionController) Put(c *gin.Context) {
 	q.IsRainbow = request.IsRainbow
 	q.IsArchive = request.IsArchive
 	q.IsPublish = request.IsPublish
+	if request.IsSpam != nil {
+		q.IsSpam = *request.IsSpam
+	}
 	err := database.DB.Save(&q).Error
 	if err != nil {
 		log.Error(err)
@@ -267,7 +277,28 @@ func (*QuestionController) Post(c *gin.Context) {
 		Fail(c, 500, "创建提问失败")
 		return
 	}
+	go checkQuestionSpam(q.ID, q.Content, q.ImagesNum)
 	Success(c, nil)
+}
+
+func checkQuestionSpam(questionID uint, content string, imagesNum int) {
+	var config database.Config
+	if err := database.DB.First(&config).Error; err != nil {
+		log.Errorf("failed to load DeepSeek settings for question %d: %v", questionID, err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), deepseek.RequestTimeout)
+	defer cancel()
+
+	isSpam, err := deepseek.DefaultClient.CheckSpam(ctx, config.DeepSeekAPIKey, config.SpamPrompt, content, imagesNum)
+	if err != nil {
+		log.Errorf("failed to check question %d for spam: %v", questionID, err)
+		return
+	}
+	if err := database.DB.Model(&database.Question{}).Where("id = ?", questionID).Update("is_spam", isSpam).Error; err != nil {
+		log.Errorf("failed to update spam result for question %d: %v", questionID, err)
+	}
 }
 
 func (*QuestionController) Delete(c *gin.Context) {
