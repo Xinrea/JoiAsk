@@ -12,10 +12,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { getSettings, updateSettings } from "@/lib/api";
 
 export default function SettingsPage() {
   const [deepSeekAPIKey, setDeepSeekAPIKey] = useState("");
+  const [spamPrompt, setSpamPrompt] = useState("");
   const [showAPIKey, setShowAPIKey] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -28,6 +30,7 @@ export default function SettingsPage() {
         const res = await getSettings();
         if (res.code === 200) {
           setDeepSeekAPIKey(res.data.deepseek_api_key || "");
+          setSpamPrompt(res.data.spam_prompt || "");
         } else {
           setMessage(res.message || "加载失败");
         }
@@ -42,15 +45,22 @@ export default function SettingsPage() {
   }, []);
 
   const handleSave = async () => {
+    if (!spamPrompt.trim()) {
+      setMessage("低质量提问判定标准不能为空");
+      setIsSuccess(false);
+      return;
+    }
     setIsSaving(true);
     setMessage("");
     setIsSuccess(false);
     try {
       const res = await updateSettings({
         deepseek_api_key: deepSeekAPIKey.trim(),
+        spam_prompt: spamPrompt.trim(),
       });
       if (res.code === 200) {
         setDeepSeekAPIKey(res.data.deepseek_api_key || "");
+        setSpamPrompt(res.data.spam_prompt || "");
         setMessage("保存成功");
         setIsSuccess(true);
       } else {
@@ -111,6 +121,23 @@ export default function SettingsPage() {
             </div>
             <p className="text-sm text-muted-foreground">
               密钥将保存在数据库中，仅登录后的管理员可以读取或修改。
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="spam-prompt">低质量提问判定标准</Label>
+            <Textarea
+              id="spam-prompt"
+              value={spamPrompt}
+              onChange={(event) => setSpamPrompt(event.target.value)}
+              placeholder={"例如：\n广告或恶意引流\n重复灌水\n明显无意义的内容"}
+              rows={8}
+              disabled={isLoading}
+              className="max-w-2xl"
+            />
+            <p className="text-sm text-muted-foreground">
+              只需描述什么样的提问属于低质量内容，无需编写“请判断”等任务说明。
+              审核逻辑、输入字段说明和 is_spam JSON 返回格式由系统自动补充。
             </p>
           </div>
 

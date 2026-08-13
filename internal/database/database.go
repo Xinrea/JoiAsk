@@ -2,7 +2,9 @@ package database
 
 import (
 	"fmt"
+	"joiask-backend/internal/deepseek"
 	"joiask-backend/pkg/util"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -47,10 +49,18 @@ func initializeDB() {
 		}
 	}
 	// Initialize default config.
-	if DB.First(&Config{}).RowsAffected == 0 {
+	var config Config
+	if DB.First(&config).RowsAffected == 0 {
 		log.Info("Initializing default config.")
-		if err := DB.Create(&Config{Announcement: "提问内容将在审核后公开"}).Error; err != nil {
+		if err := DB.Create(&Config{
+			Announcement: "提问内容将在审核后公开",
+			SpamPrompt:   deepseek.DefaultSpamPrompt,
+		}).Error; err != nil {
 			log.Fatal("Failed to initialize default config.", err)
+		}
+	} else if strings.TrimSpace(config.SpamPrompt) == "" {
+		if err := DB.Model(&config).Update("spam_prompt", deepseek.DefaultSpamPrompt).Error; err != nil {
+			log.Fatal("Failed to initialize spam prompt.", err)
 		}
 	}
 	// Initialize default tag.

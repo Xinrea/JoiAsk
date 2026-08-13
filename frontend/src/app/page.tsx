@@ -219,6 +219,7 @@ export default function HomePage() {
     is_rainbow: isRainbow,
     is_archive: false,
     is_publish: false,
+    is_spam: false,
     emojis: '[]',
     likes: 0,
   } : null;

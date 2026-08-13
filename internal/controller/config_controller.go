@@ -2,6 +2,7 @@ package controller
 
 import (
 	"joiask-backend/internal/database"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -15,6 +16,7 @@ type ConfigRequest struct {
 
 type SettingsRequest struct {
 	DeepSeekAPIKey string `json:"deepseek_api_key"`
+	SpamPrompt     string `json:"spam_prompt"`
 }
 
 func (*ConfigController) Get(c *gin.Context) {
@@ -47,13 +49,21 @@ func (*ConfigController) GetSettings(c *gin.Context) {
 		Fail(c, 500, "内部错误")
 		return
 	}
-	Success(c, SettingsRequest{DeepSeekAPIKey: config.DeepSeekAPIKey})
+	Success(c, SettingsRequest{
+		DeepSeekAPIKey: config.DeepSeekAPIKey,
+		SpamPrompt:     config.SpamPrompt,
+	})
 }
 
 func (*ConfigController) PutSettings(c *gin.Context) {
 	var request SettingsRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		Fail(c, 400, "请求错误")
+		return
+	}
+	request.SpamPrompt = strings.TrimSpace(request.SpamPrompt)
+	if request.SpamPrompt == "" {
+		Fail(c, 400, "低质量提问判定标准不能为空")
 		return
 	}
 
@@ -64,10 +74,14 @@ func (*ConfigController) PutSettings(c *gin.Context) {
 		return
 	}
 	config.DeepSeekAPIKey = request.DeepSeekAPIKey
+	config.SpamPrompt = request.SpamPrompt
 	if err := database.DB.Save(&config).Error; err != nil {
 		log.Errorf("failed to save settings: %v", err)
 		Fail(c, 500, "内部错误")
 		return
 	}
-	Success(c, SettingsRequest{DeepSeekAPIKey: config.DeepSeekAPIKey})
+	Success(c, SettingsRequest{
+		DeepSeekAPIKey: config.DeepSeekAPIKey,
+		SpamPrompt:     config.SpamPrompt,
+	})
 }

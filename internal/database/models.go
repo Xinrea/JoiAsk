@@ -27,6 +27,7 @@ type Question struct {
 	IsRainbow bool   `gorm:"index" json:"is_rainbow"`
 	IsArchive bool   `gorm:"index" json:"is_archive"`
 	IsPublish bool   `gorm:"index" json:"is_publish"`
+	IsSpam    bool   `gorm:"index;not null;default:false" json:"is_spam"`
 	Emojis    string `json:"emojis"`
 }
 
@@ -47,6 +48,7 @@ type Config struct {
 	BaseModel
 	Announcement   string `json:"announcement"`
 	DeepSeekAPIKey string `json:"-"`
+	SpamPrompt     string `gorm:"type:text" json:"-"`
 }
 
 func (t Tag) Json() map[string]interface{} {

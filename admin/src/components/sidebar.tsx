@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   MessageSquare,
+  Inbox,
+  Trash2,
   Tag,
   Users,
   Settings,
@@ -16,7 +18,6 @@ import { useAuth } from "@/lib/auth";
 
 const navItems = [
   { href: "/dashboard", label: "概览", icon: LayoutDashboard },
-  { href: "/dashboard/questions", label: "提问管理", icon: MessageSquare },
   { href: "/dashboard/tags", label: "话题管理", icon: Tag },
   { href: "/dashboard/users", label: "账号管理", icon: Users },
   { href: "/dashboard/settings", label: "设置", icon: Settings },
@@ -64,7 +65,60 @@ export function Sidebar() {
         </h1>
       </div>
       <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
-        {navItems.map((item) => {
+        {navItems.slice(0, 1).map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-[200ms] ease-out",
+                isActive
+                  ? "bg-sidebar-accent text-sidebar-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_0_rgba(0,0,0,0.1)]"
+                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+              )}
+            >
+              <Icon className="h-5 w-5 shrink-0 opacity-90" />
+              {item.label}
+            </Link>
+          );
+        })}
+        <div className="pt-0.5">
+          <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-sidebar-foreground/90">
+            <MessageSquare className="h-5 w-5 shrink-0 opacity-90" />
+            提问管理
+          </div>
+          <div className="ml-5 space-y-0.5 border-l border-sidebar-border pl-2">
+            {[
+              { href: "/dashboard/questions", label: "收件箱", icon: Inbox },
+              {
+                href: "/dashboard/questions/spam",
+                label: "拦截箱",
+                icon: Trash2,
+              },
+            ].map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-[200ms] ease-out",
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_0_rgba(0,0,0,0.1)]"
+                      : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0 opacity-90" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+        {navItems.slice(1).map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
