@@ -288,7 +288,10 @@ func checkQuestionSpam(questionID uint, content string, imagesNum int) {
 		return
 	}
 
-	isSpam, err := deepseek.NewClient().CheckSpam(context.Background(), config.DeepSeekAPIKey, config.SpamPrompt, content, imagesNum)
+	ctx, cancel := context.WithTimeout(context.Background(), deepseek.RequestTimeout)
+	defer cancel()
+
+	isSpam, err := deepseek.DefaultClient.CheckSpam(ctx, config.DeepSeekAPIKey, config.SpamPrompt, content, imagesNum)
 	if err != nil {
 		log.Errorf("failed to check question %d for spam: %v", questionID, err)
 		return

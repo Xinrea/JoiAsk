@@ -15,7 +15,9 @@ const (
 	chatCompletionsURL = "https://api.deepseek.com/chat/completions"
 	spamCheckModel     = "deepseek-v4-flash"
 	maxLogBodyLength   = 4096
-	requestTimeout     = 120 * time.Second
+	// RequestTimeout bounds each spam check so a hanging DeepSeek call cannot
+	// keep the background goroutine alive indefinitely.
+	RequestTimeout = 120 * time.Second
 )
 
 const DefaultSpamPrompt = `广告或恶意引流
@@ -75,9 +77,14 @@ func NewClient() *Client {
 	return &Client{
 		// Spam checks run after the question has already been saved, so a slower
 		// model response should not be cut off by a short request timeout.
-		httpClient: &http.Client{Timeout: requestTimeout},
+		httpClient: &http.Client{Timeout: RequestTimeout},
 	}
 }
+
+// DefaultClient is a shared Client reused across all spam checks so the
+// underlying HTTP transport can reuse keep-alive connections instead of
+// allocating a new client per question.
+var DefaultClient = NewClient()
 
 func (c *Client) CheckSpam(ctx context.Context, apiKey, spamPrompt, content string, imagesNum int) (bool, error) {
 	if strings.TrimSpace(apiKey) == "" {
