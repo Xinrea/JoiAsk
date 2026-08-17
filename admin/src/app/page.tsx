@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import md5 from "md5";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,14 +20,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
   const { login, isAuthenticated, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      router.push("/dashboard");
+      window.location.replace("/admin/dashboard/");
     }
-  }, [authLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated]);
 
   if (authLoading) {
     return (
@@ -52,7 +50,7 @@ export default function LoginPage() {
       if (res.code === 200) {
         login(res.data);
         // 使用整页跳转，确保带上服务端设置的 cookie 并正确进入后台
-        window.location.href = "/admin/dashboard";
+        window.location.replace("/admin/dashboard/");
         return;
       } else {
         setError(res.message || "登录失败");
