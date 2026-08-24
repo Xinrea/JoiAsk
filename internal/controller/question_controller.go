@@ -374,31 +374,29 @@ func (this *QuestionController) Emoji(c *gin.Context) {
 		Fail(c, 400, "无效的表情符号")
 		return
 	}
-	// ip := c.ClientIP()
 	id, _ := strconv.Atoi(c.Param("id"))
-	// var lr database.LikeRecord
-	// database.DB.Where("ip = ? and question_id = ?", ip, id).First(&lr)
-	// if lr.ID > 0 {
-	// 	Fail(c, 400, "您已经评价过了")
-	// 	return
-	// }
-	// lr.IP = ip
-	// lr.QuestionID = id
-	// tx := database.DB.Begin()
-	// err := tx.Create(&lr).Error
-	// if err != nil {
-	// 	log.Error(err)
-	// 	Fail(c, 500, "评价失败")
-	// 	tx.Rollback()
-	// 	return
-	// }
 	tx := database.DB.Begin()
 	var q database.Question
-	err := database.DB.Where("id = ?", id).First(&q).Error
+	err := tx.Where("id = ?", id).First(&q).Error
 	if err != nil {
 		log.Error(err)
 		Fail(c, 500, "评价失败")
 		tx.Rollback()
+		return
+	}
+	// Treat every emoji reaction as a like for rate limiting: one reaction per
+	// IP and question, regardless of which emoji was submitted.
+	likeRecord := database.LikeRecord{IP: c.ClientIP(), QuestionID: id}
+	result := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&likeRecord)
+	if result.Error != nil {
+		log.Error(result.Error)
+		Fail(c, 500, "评价失败")
+		tx.Rollback()
+		return
+	}
+	if result.RowsAffected == 0 {
+		tx.Rollback()
+		Fail(c, 400, "您已经评价过了")
 		return
 	}
 	var emojis []*EmojiRecord

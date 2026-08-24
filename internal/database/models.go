@@ -33,8 +33,8 @@ type Question struct {
 
 type LikeRecord struct {
 	BaseModel
-	IP         string   `gorm:"index" json:"ip"`
-	QuestionID int      `gorm:"index" json:"question_id"`
+	IP         string   `gorm:"uniqueIndex:idx_like_records_ip_question" json:"ip"`
+	QuestionID int      `gorm:"uniqueIndex:idx_like_records_ip_question" json:"question_id"`
 	Question   Question `json:"question"`
 }
 
