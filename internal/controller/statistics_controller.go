@@ -13,6 +13,7 @@ type StatisticsResponse struct {
 	TotalQuestions     int64     `json:"total_questions"`
 	TotalTags          int64     `json:"total_tags"`
 	TotalUsers         int64     `json:"total_users"`
+	TotalMembers       int64     `json:"total_members"`
 	TotalImages        int64     `json:"total_images"`
 	RainbowQuestions   int64     `json:"rainbow_questions"`
 	ArchivedQuestions  int64     `json:"archived_questions"`
@@ -45,6 +46,11 @@ func (*StatisticsController) Get(c *gin.Context) {
 	// Count total users
 	if err := database.DB.Model(&database.Admin{}).Count(&stats.TotalUsers).Error; err != nil {
 		log.Errorf("failed to count users: %v", err)
+		Fail(c, 500, "内部错误")
+		return
+	}
+	if err := database.DB.Model(&database.User{}).Count(&stats.TotalMembers).Error; err != nil {
+		log.Errorf("failed to count registered users: %v", err)
 		Fail(c, 500, "内部错误")
 		return
 	}

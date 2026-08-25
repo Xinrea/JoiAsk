@@ -11,12 +11,14 @@ import (
 type ConfigController struct{}
 
 type ConfigRequest struct {
-	Announcement string `json:"announcement"`
+	Announcement              string `json:"announcement"`
+	RequireVerifiedUserToPost *bool  `json:"require_verified_user_to_post"`
 }
 
 type SettingsRequest struct {
-	DeepSeekAPIKey string `json:"deepseek_api_key"`
-	SpamPrompt     string `json:"spam_prompt"`
+	DeepSeekAPIKey            string `json:"deepseek_api_key"`
+	SpamPrompt                string `json:"spam_prompt"`
+	RequireVerifiedUserToPost bool   `json:"require_verified_user_to_post"`
 }
 
 func (*ConfigController) Get(c *gin.Context) {
@@ -34,6 +36,9 @@ func (*ConfigController) Put(c *gin.Context) {
 	var config database.Config
 	database.DB.First(&config)
 	config.Announcement = request.Announcement
+	if request.RequireVerifiedUserToPost != nil {
+		config.RequireVerifiedUserToPost = *request.RequireVerifiedUserToPost
+	}
 	if err := database.DB.Save(&config).Error; err != nil {
 		log.Errorf("failed to save config: %v", err)
 		Fail(c, 500, "内部错误")
@@ -50,8 +55,9 @@ func (*ConfigController) GetSettings(c *gin.Context) {
 		return
 	}
 	Success(c, SettingsRequest{
-		DeepSeekAPIKey: config.DeepSeekAPIKey,
-		SpamPrompt:     config.SpamPrompt,
+		DeepSeekAPIKey:            config.DeepSeekAPIKey,
+		SpamPrompt:                config.SpamPrompt,
+		RequireVerifiedUserToPost: config.RequireVerifiedUserToPost,
 	})
 }
 
@@ -75,13 +81,15 @@ func (*ConfigController) PutSettings(c *gin.Context) {
 	}
 	config.DeepSeekAPIKey = request.DeepSeekAPIKey
 	config.SpamPrompt = request.SpamPrompt
+	config.RequireVerifiedUserToPost = request.RequireVerifiedUserToPost
 	if err := database.DB.Save(&config).Error; err != nil {
 		log.Errorf("failed to save settings: %v", err)
 		Fail(c, 500, "内部错误")
 		return
 	}
 	Success(c, SettingsRequest{
-		DeepSeekAPIKey: config.DeepSeekAPIKey,
-		SpamPrompt:     config.SpamPrompt,
+		DeepSeekAPIKey:            config.DeepSeekAPIKey,
+		SpamPrompt:                config.SpamPrompt,
+		RequireVerifiedUserToPost: config.RequireVerifiedUserToPost,
 	})
 }

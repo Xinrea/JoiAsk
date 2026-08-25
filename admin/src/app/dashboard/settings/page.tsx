@@ -13,11 +13,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { BilibiliVerificationSettings } from "@/components/bilibili-verification-settings";
 import { getSettings, updateSettings } from "@/lib/api";
 
 export default function SettingsPage() {
   const [deepSeekAPIKey, setDeepSeekAPIKey] = useState("");
   const [spamPrompt, setSpamPrompt] = useState("");
+  const [requireVerifiedUserToPost, setRequireVerifiedUserToPost] = useState(false);
   const [showAPIKey, setShowAPIKey] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -31,6 +34,7 @@ export default function SettingsPage() {
         if (res.code === 200) {
           setDeepSeekAPIKey(res.data.deepseek_api_key || "");
           setSpamPrompt(res.data.spam_prompt || "");
+          setRequireVerifiedUserToPost(!!res.data.require_verified_user_to_post);
         } else {
           setMessage(res.message || "加载失败");
         }
@@ -57,10 +61,12 @@ export default function SettingsPage() {
       const res = await updateSettings({
         deepseek_api_key: deepSeekAPIKey.trim(),
         spam_prompt: spamPrompt.trim(),
+        require_verified_user_to_post: requireVerifiedUserToPost,
       });
       if (res.code === 200) {
         setDeepSeekAPIKey(res.data.deepseek_api_key || "");
         setSpamPrompt(res.data.spam_prompt || "");
+        setRequireVerifiedUserToPost(!!res.data.require_verified_user_to_post);
         setMessage("保存成功");
         setIsSuccess(true);
       } else {
@@ -80,9 +86,34 @@ export default function SettingsPage() {
           设置
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          管理服务所需的密钥与基础配置
+          管理投稿权限、B 站注册验证与外部服务配置
         </p>
       </header>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>投稿权限</CardTitle>
+          <CardDescription>控制游客是否可以直接投稿，不影响登录和注册入口。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex max-w-2xl items-start gap-3">
+            <Checkbox
+              id="require-verified-user"
+              checked={requireVerifiedUserToPost}
+              onCheckedChange={(checked) => setRequireVerifiedUserToPost(!!checked)}
+              disabled={isLoading}
+            />
+            <div className="space-y-1">
+              <Label htmlFor="require-verified-user">投稿需要已验证用户</Label>
+              <p className="text-sm text-muted-foreground">
+                开启后仅已完成 B 站验证并登录的用户可以投稿。
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <BilibiliVerificationSettings />
 
       <Card>
         <CardHeader>
@@ -141,17 +172,19 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          {message && (
-            <p className={isSuccess ? "text-[#6b7d6b]" : "text-destructive"}>
-              {message}
-            </p>
-          )}
-
-          <Button onClick={handleSave} disabled={isLoading || isSaving}>
-            {isLoading ? "加载中..." : isSaving ? "保存中..." : "保存"}
-          </Button>
         </CardContent>
       </Card>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Button onClick={handleSave} disabled={isLoading || isSaving}>
+          {isLoading ? "加载中..." : isSaving ? "保存中..." : "保存设置"}
+        </Button>
+        {message && (
+          <p className={isSuccess ? "text-[#6b7d6b]" : "text-destructive"}>
+            {message}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

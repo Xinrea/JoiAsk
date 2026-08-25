@@ -17,17 +17,21 @@ import { InputEmojiPicker } from '@/components/input-emoji-picker';
 import { GoToTop } from '@/components/go-to-top';
 import { getQuestions, getTags, getConfig, getInfo, createQuestion, Tag, Question } from '@/lib/api';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useAccountAuth } from '@/lib/account-auth';
 
 export default function HomePage() {
+	const { user: accountUser, openAccountDialog } = useAccountAuth();
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedTag, setSelectedTag] = useState<string>('');
   const [content, setContent] = useState('');
   const [isRainbow, setIsRainbow] = useState(false);
+  const [isRealName, setIsRealName] = useState(false);
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [announcement, setAnnouncement] = useState('');
+  const [requireVerifiedUserToPost, setRequireVerifiedUserToPost] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Questions state
@@ -39,6 +43,10 @@ export default function HomePage() {
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
   const { emojiUpdates, archiveUpdates, handleCardCursor, handleCardCursorLeave, getRemoteCursors } = useWebSocket();
+
+  useEffect(() => {
+    if (!accountUser) setIsRealName(false);
+  }, [accountUser]);
 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -59,6 +67,7 @@ export default function HomePage() {
     getConfig().then((res) => {
       if (res.code === 200) {
         setAnnouncement(res.data.announcement || '');
+        setRequireVerifiedUserToPost(!!res.data.require_verified_user_to_post);
       }
     });
 
@@ -159,6 +168,10 @@ export default function HomePage() {
   };
 
   const handleSubmit = async () => {
+    if (requireVerifiedUserToPost && !accountUser) {
+      openAccountDialog('login');
+      return;
+    }
     const trimmedContent = content.trim().replace(/｛/g, '{').replace(/｝/g, '}');
     if (!trimmedContent) {
       alert('请输入有效的提问内容');
@@ -174,6 +187,7 @@ export default function HomePage() {
     formData.append('tag_id', selectedTag);
     formData.append('content', trimmedContent);
     if (isRainbow) formData.append('rainbow', 'true');
+    if (isRealName) formData.append('real_name', 'true');
     files.forEach((file) => formData.append('files[]', file));
 
     try {
@@ -186,6 +200,7 @@ export default function HomePage() {
           localStorage.setItem('ask_content', '');
           setSelectedTag('');
           setIsRainbow(false);
+          setIsRealName(false);
           setShowImageUpload(false);
           setFiles([]);
           setTimeout(() => setSubmitSuccess(false), 4000);
@@ -217,6 +232,10 @@ export default function HomePage() {
     images_num: files.length,
     is_hide: false,
     is_rainbow: isRainbow,
+    is_real_name: isRealName,
+    bilibili_uid: isRealName ? accountUser?.bilibili_uid : undefined,
+    bilibili_name: isRealName ? accountUser?.bilibili_name : undefined,
+    bilibili_avatar: isRealName ? accountUser?.bilibili_avatar : undefined,
     is_archive: false,
     is_publish: false,
     is_spam: false,
@@ -270,22 +289,28 @@ export default function HomePage() {
         {/* Options */}
         <div className="flex justify-between my-4 text-sm">
           <div className="text-primary whitespace-pre-wrap">{announcement}</div>
-          <div className="flex flex-col items-start text-primary">
-            <Label className="flex items-center cursor-pointer mb-1">
+          <div className="flex flex-col items-start gap-1.5 text-primary">
+            <Label className="flex cursor-pointer items-center gap-2 leading-6">
               <Checkbox
                 checked={isRainbow}
                 onCheckedChange={(checked) => setIsRainbow(!!checked)}
-                className="mr-2"
               />
               彩虹屁
             </Label>
-            <Label className="flex items-center cursor-pointer">
+            <Label className="flex cursor-pointer items-center gap-2 leading-6">
               <Checkbox
                 checked={showImageUpload}
                 onCheckedChange={(checked) => setShowImageUpload(!!checked)}
-                className="mr-2"
               />
               附图
+            </Label>
+            <Label className={`flex items-center gap-2 leading-6 ${accountUser ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
+              <Checkbox
+                checked={isRealName}
+                onCheckedChange={(checked) => setIsRealName(!!checked)}
+                disabled={!accountUser}
+              />
+              {accountUser ? '实名投稿' : '实名投稿（需登录）'}
             </Label>
           </div>
         </div>
@@ -302,7 +327,7 @@ export default function HomePage() {
           onClick={handleSubmit}
           disabled={isSubmitting}
         >
-          {isSubmitting ? '上传中，请稍等' : '提交'}
+          {isSubmitting ? '上传中，请稍等' : requireVerifiedUserToPost && !accountUser ? '登录后提交' : '提交'}
         </Button>
 
         {/* Success Message */}

@@ -231,6 +231,21 @@ func (this *QuestionController) Put(c *gin.Context) {
 }
 
 func (*QuestionController) Post(c *gin.Context) {
+	var config database.Config
+	if err := database.DB.First(&config).Error; err != nil {
+		Fail(c, 500, "内部错误")
+		return
+	}
+	member, memberLoggedIn := currentMember(c)
+	if config.RequireVerifiedUserToPost && !memberLoggedIn {
+		Fail(c, 403, "投稿需要先完成 B 站验证并登录")
+		return
+	}
+	realName := c.PostForm("real_name") == "true"
+	if realName && !memberLoggedIn {
+		Fail(c, 403, "实名投稿需要先完成 B 站验证并登录")
+		return
+	}
 	var tag database.Tag
 	tagID := c.PostForm("tag_id")
 	database.DB.First(&tag, tagID)
@@ -239,6 +254,14 @@ func (*QuestionController) Post(c *gin.Context) {
 		return
 	}
 	var q database.Question
+	if memberLoggedIn {
+		q.BilibiliUID = &member.BilibiliUID
+	}
+	if realName {
+		q.IsRealName = true
+		q.BilibiliName = member.BilibiliName
+		q.BilibiliAvatar = member.BilibiliAvatar
+	}
 	q.TagID = int(tag.ID)
 	q.Content = strings.Trim(c.PostForm("content"), " \r\n\t")
 	q.IsHide = c.PostForm("hide") == "true"

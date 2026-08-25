@@ -37,7 +37,16 @@ func Init() {
 
 // initializeDB initializes the database, create tables and default records.
 func initializeDB() {
-	err := DB.AutoMigrate(&Question{}, &LikeRecord{}, &Admin{}, &Config{}, &Tag{})
+	err := DB.AutoMigrate(
+		&User{},
+		&BilibiliVerificationAccount{},
+		&BilibiliVerificationRequest{},
+		&Question{},
+		&LikeRecord{},
+		&Admin{},
+		&Config{},
+		&Tag{},
+	)
 	if err != nil {
 		log.Fatal(err)
 	}

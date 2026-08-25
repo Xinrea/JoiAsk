@@ -10,6 +10,7 @@ import {
   Trash2,
   Tag,
   Users,
+  UserCheck,
   Settings,
   Home,
   LogOut,
@@ -20,6 +21,7 @@ const navItems = [
   { href: "/dashboard", label: "概览", icon: LayoutDashboard },
   { href: "/dashboard/tags", label: "话题管理", icon: Tag },
   { href: "/dashboard/users", label: "账号管理", icon: Users },
+  { href: "/dashboard/members", label: "注册用户", icon: UserCheck },
   { href: "/dashboard/settings", label: "设置", icon: Settings },
 ];
 

@@ -26,6 +26,10 @@ export interface Question {
   is_archive: boolean;
   is_publish: boolean;
   is_spam: boolean;
+  is_real_name: boolean;
+  bilibili_uid?: string;
+  bilibili_name?: string;
+  bilibili_avatar?: string;
   emojis: string;
   likes: number;
   created_at: string;
@@ -34,6 +38,29 @@ export interface Question {
 
 export interface Config {
   announcement: string;
+  require_verified_user_to_post: boolean;
+}
+
+export interface AccountUser {
+  username: string;
+  bilibili_uid: string;
+  bilibili_name: string;
+  bilibili_avatar: string;
+  verified_at: string;
+  is_disabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VerificationStatus {
+  status: 'pending' | 'verified' | 'expired' | 'consumed';
+  target_uid?: string;
+  bilibili_uid?: string;
+  bilibili_name?: string;
+  bilibili_avatar?: string;
+  requested_at: string;
+  expires_at: string;
+  confirmation_until?: string;
 }
 
 export interface ApiResponse<T> {
@@ -61,6 +88,51 @@ export async function getConfig(): Promise<ApiResponse<Config>> {
   const res = await fetch(`${API_BASE}/config`, {
     method: 'GET',
     credentials: 'include',
+  });
+  return res.json();
+}
+
+export async function getAccountInfo(): Promise<ApiResponse<AccountUser>> {
+  const res = await fetch(`${API_BASE}/account/info`, { credentials: 'include' });
+  return res.json();
+}
+
+export async function loginAccount(username: string, password: string): Promise<ApiResponse<AccountUser>> {
+  const res = await fetch(`${API_BASE}/account/login`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  return res.json();
+}
+
+export async function logoutAccount(): Promise<ApiResponse<null>> {
+  const res = await fetch(`${API_BASE}/account/logout`, { method: 'POST', credentials: 'include' });
+  return res.json();
+}
+
+export async function startAccountVerification(bilibiliUid: string): Promise<ApiResponse<VerificationStatus>> {
+  const res = await fetch(`${API_BASE}/account/verification`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ bilibili_uid: bilibiliUid }),
+  });
+  return res.json();
+}
+
+export async function getAccountVerification(): Promise<ApiResponse<VerificationStatus>> {
+  const res = await fetch(`${API_BASE}/account/verification`, { credentials: 'include' });
+  return res.json();
+}
+
+export async function registerAccount(username: string, password: string): Promise<ApiResponse<AccountUser>> {
+  const res = await fetch(`${API_BASE}/account/register`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
   });
   return res.json();
 }

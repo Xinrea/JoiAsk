@@ -114,6 +114,24 @@ SQLite 是单文件数据库，无需额外安装数据库服务。
 }
 ```
 
+### 账号与 B 站验证安全配置
+
+启用 B 站关注验证前，请为 Session 签名和 B 站 Cookie 加密分别设置独立的随机密钥（建议至少 32 个字符）：
+
+```json
+{
+    "security": {
+        "session_secret": "replace-with-a-long-random-secret",
+        "bilibili_cookie_key": "replace-with-an-independent-long-random-key",
+        "secure_cookie": true
+    }
+}
+```
+
+- HTTPS 部署应将 `secure_cookie` 设为 `true`；本地 HTTP 开发保持 `false`。
+- 未配置 `bilibili_cookie_key` 时，已有用户仍可登录，但不能配置验证账号或发起新注册验证。
+- 可通过 `JOIASK_CONFIG=/path/to/config.json` 指定配置文件；未设置时仍读取 `./config/config.json`。
+
 ### 图片存储配置
 
 #### 本地存储（推荐）

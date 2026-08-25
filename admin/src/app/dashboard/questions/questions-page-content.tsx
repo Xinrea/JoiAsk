@@ -390,6 +390,7 @@ export function QuestionsPageContent({ isSpam }: QuestionsPageContentProps) {
               <TableHead className="min-w-[200px] max-w-[420px]">
                 内容
               </TableHead>
+              <TableHead className="w-[150px]">投稿者</TableHead>
               <TableHead className="w-[56px] text-center">附图</TableHead>
               <TableHead className="w-[56px] text-center">彩虹</TableHead>
               <TableHead className="w-[56px] text-center">归档</TableHead>
@@ -401,13 +402,13 @@ export function QuestionsPageContent({ isSpam }: QuestionsPageContentProps) {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-12">
+                <TableCell colSpan={11} className="text-center py-12">
                   加载中...
                 </TableCell>
               </TableRow>
             ) : questions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-12">
+                <TableCell colSpan={11} className="text-center py-12">
                   暂无数据
                 </TableCell>
               </TableRow>
@@ -466,6 +467,14 @@ export function QuestionsPageContent({ isSpam }: QuestionsPageContentProps) {
                       {question.content.length > 120 && (
                         <span className="text-muted-foreground">…</span>
                       )}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {question.is_real_name && question.bilibili_uid ? (
+                        <a href={`https://space.bilibili.com/${question.bilibili_uid}`} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-[145px] items-center gap-2 text-primary hover:underline">
+                          {question.bilibili_avatar && <img src={question.bilibili_avatar} alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" />}
+                          <span className="truncate" title={`UID ${question.bilibili_uid}`}>{question.bilibili_name}</span>
+                        </a>
+                      ) : <span className="text-muted-foreground">匿名</span>}
                     </TableCell>
                     <TableCell className="text-center text-sm whitespace-nowrap">
                       {question.images_num}
@@ -544,7 +553,7 @@ export function QuestionsPageContent({ isSpam }: QuestionsPageContentProps) {
                   {expandedRows.has(question.id) && (
                     <TableRow key={`${question.id}-expanded`}>
                       <TableCell
-                        colSpan={10}
+                        colSpan={11}
                         className="bg-muted/30 p-0 align-top"
                       >
                         <div className="w-full max-w-full overflow-hidden">
@@ -601,6 +610,14 @@ export function QuestionsPageContent({ isSpam }: QuestionsPageContentProps) {
                                   <li>点赞: {question.likes}</li>
                                   <li>图片: {question.images_num}</li>
                                   <li>时间: {formatDate(question.created_at)}</li>
+                                  {question.is_real_name && question.bilibili_uid && (
+                                    <li>
+                                      <a href={`https://space.bilibili.com/${question.bilibili_uid}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary hover:underline">
+                                        {question.bilibili_avatar && <img src={question.bilibili_avatar} alt="" className="h-6 w-6 rounded-full object-cover" />}
+                                        <span title={`UID ${question.bilibili_uid}`}>{question.bilibili_name}</span>
+                                      </a>
+                                    </li>
+                                  )}
                                 </ul>
                               </div>
                               <div>

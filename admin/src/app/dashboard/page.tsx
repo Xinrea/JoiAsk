@@ -101,6 +101,12 @@ export default function OverviewPage() {
       color: "text-chart-3",
     },
     {
+      title: "注册用户",
+      value: stats?.total_members ?? 0,
+      icon: Users,
+      color: "text-chart-2",
+    },
+    {
       title: "附图总数",
       value: stats?.total_images ?? 0,
       icon: Image,

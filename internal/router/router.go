@@ -1,9 +1,14 @@
 package router
 
 import (
+	"context"
+	"joiask-backend/internal/avatar"
+	"joiask-backend/internal/bilibili"
 	"joiask-backend/internal/controller"
+	"joiask-backend/internal/verification"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
@@ -23,10 +28,16 @@ func Run() {
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 	}))
-	store := cookie.NewStore([]byte("WhyJoiIsSoCute"))
+	sessionSecret := viper.GetString("security.session_secret")
+	if len(sessionSecret) < 32 {
+		logrus.Warn("security.session_secret is not configured; using the legacy session key")
+		sessionSecret = "WhyJoiIsSoCute"
+	}
+	store := cookie.NewStore([]byte(sessionSecret))
 	store.Options(sessions.Options{
 		Path:     "/",
-		Secure:   false,
+		Secure:   viper.GetBool("security.secure_cookie"),
+		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
 	r.Use(sessions.Sessions("session", store))
@@ -36,7 +47,26 @@ func Run() {
 	questionController := controller.NewQuestionController()
 	configController := new(controller.ConfigController)
 	statisticsController := new(controller.StatisticsController)
+	accountController := new(controller.AccountController)
+	bilibiliClient := bilibili.NewClient()
+	memberController := &controller.MemberController{Client: bilibiliClient, AvatarStorage: avatar.NewStore()}
+	verificationAccountController := &controller.BilibiliVerificationAccountController{Client: bilibiliClient}
+	verification.NewWorker(bilibiliClient).Start(context.Background())
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		avatar.NewStore().SyncExistingUsers(ctx)
+	}()
 	{
+		// Public member account
+		{
+			api.POST("/account/verification", accountController.StartVerification)
+			api.GET("/account/verification", accountController.VerificationStatus)
+			api.POST("/account/register", accountController.Register)
+			api.POST("/account/login", accountController.Login)
+			api.GET("/account/info", accountController.Info)
+			api.POST("/account/logout", accountController.Logout)
+		}
 		// User
 		{
 			api.POST("/login", userController.Login)
@@ -47,6 +77,20 @@ func Run() {
 			api.POST("/user", authMiddleware, userController.Post)
 			api.PUT("/user/:id", authMiddleware, userController.Put)
 			api.DELETE("/user/:id", authMiddleware, userController.Delete)
+		}
+		// Registered members
+		{
+			api.GET("/member", authMiddleware, memberController.Get)
+			api.POST("/member", authMiddleware, memberController.Post)
+			api.PUT("/member/:uid", authMiddleware, memberController.Put)
+			api.DELETE("/member/:uid", authMiddleware, memberController.Delete)
+		}
+		// Bilibili verification account
+		{
+			api.GET("/bilibili-verification-account", authMiddleware, verificationAccountController.Get)
+			api.PUT("/bilibili-verification-account", authMiddleware, verificationAccountController.Put)
+			api.POST("/bilibili-verification-account/test", authMiddleware, verificationAccountController.Test)
+			api.DELETE("/bilibili-verification-account", authMiddleware, verificationAccountController.Delete)
 		}
 		// Tag
 		{

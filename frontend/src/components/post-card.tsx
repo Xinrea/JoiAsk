@@ -361,7 +361,19 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
             </div>
 
             {/* Footer */}
-            <div className="text-right text-sm h-6 flex justify-end items-center">
+            <div className="text-right text-sm min-h-6 flex justify-between items-center gap-2">
+              {data.is_real_name && data.bilibili_uid ? (
+                <a
+                  href={`https://space.bilibili.com/${data.bilibili_uid}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex max-w-[220px] items-center gap-2 rounded px-1.5 py-0.5 text-left text-primary transition hover:bg-accent"
+                >
+                  {data.bilibili_avatar && <img src={data.bilibili_avatar} alt="" className="h-6 w-6 rounded-full object-cover" />}
+                  <span className="truncate" title={`UID ${data.bilibili_uid}`}>{data.bilibili_name}</span>
+                </a>
+              ) : <span />}
+              <div className="flex items-center">
               <EmojiPicker
                 questionId={data.id}
                 emojis={emojis}
@@ -374,6 +386,7 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
                   归档此卡
                 </div>
               )}
+              </div>
             </div>
           </div>
 

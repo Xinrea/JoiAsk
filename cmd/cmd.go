@@ -3,6 +3,7 @@ package main
 import (
 	"joiask-backend/internal/database"
 	"joiask-backend/internal/router"
+	"os"
 
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/sirupsen/logrus"
@@ -10,7 +11,11 @@ import (
 )
 
 func main() {
-	viper.SetConfigFile("./config/config.json")
+	configFile := os.Getenv("JOIASK_CONFIG")
+	if configFile == "" {
+		configFile = "./config/config.json"
+	}
+	viper.SetConfigFile(configFile)
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Fatal(err)
