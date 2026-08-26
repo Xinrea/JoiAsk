@@ -41,6 +41,12 @@ export function AccountDialog({
   useEffect(() => {
     if (open) {
       setMode(initialMode);
+      setUsername("");
+      setLoginUsername("");
+      setPassword("");
+      setConfirmPassword("");
+      setVerification(null);
+      setRemaining(0);
       setError("");
     }
   }, [open, initialMode]);

@@ -285,9 +285,6 @@ func (ctl *AccountController) Register(c *gin.Context) {
 		return nil
 	})
 	if err != nil {
-		if deleteErr := avatarStorage.Delete(storedAvatar); deleteErr != nil {
-			log.Warnf("failed to clean up unused user avatar: %v", deleteErr)
-		}
 		Fail(c, 409, "注册失败，该 UID 可能已注册或验证已被使用")
 		return
 	}

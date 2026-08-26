@@ -12,7 +12,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -135,9 +134,6 @@ func (ctl *MemberController) Post(c *gin.Context) {
 		VerifiedAt:     now,
 	}
 	if err := database.DB.Create(&user).Error; err != nil {
-		if storedAvatar != "" {
-			_ = avatarStorage.Delete(storedAvatar)
-		}
 		Fail(c, 409, "创建失败，该 UID 或登录名可能已被使用")
 		return
 	}
@@ -182,9 +178,6 @@ func (*MemberController) Delete(c *gin.Context) {
 	if err := database.DB.Delete(&user).Error; err != nil {
 		Fail(c, 500, "删除用户失败")
 		return
-	}
-	if err := avatar.NewStore().Delete(user.BilibiliAvatar); err != nil {
-		log.Warnf("failed to delete avatar for removed Bilibili uid %d: %v", user.BilibiliUID, err)
 	}
 	Success(c, nil)
 }

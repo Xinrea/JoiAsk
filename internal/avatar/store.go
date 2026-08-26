@@ -134,8 +134,8 @@ func (s *Store) SyncExistingUsers(ctx context.Context) {
 		result := database.DB.Model(&database.User{}).
 			Where("bilibili_uid = ? AND bilibili_avatar = ?", user.BilibiliUID, user.BilibiliAvatar).
 			Update("bilibili_avatar", storedURL)
-		if result.Error != nil || result.RowsAffected != 1 {
-			_ = s.Delete(storedURL)
+		if result.Error != nil {
+			continue
 		}
 	}
 }
