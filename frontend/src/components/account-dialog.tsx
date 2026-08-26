@@ -255,7 +255,7 @@ export function AccountDialog({
             <div className="flex items-center justify-between text-sm">
               <span className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                等待系统确认（预计 1 分钟内）
+                等待系统确认（预计 2 分钟内）
               </span>
               <span>{remaining} 秒</span>
             </div>
