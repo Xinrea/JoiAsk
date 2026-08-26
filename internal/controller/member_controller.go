@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -87,6 +88,7 @@ func (ctl *MemberController) Post(c *gin.Context) {
 	defer cancel()
 	profile, err := ctl.Client.Profile(profileContext, uid)
 	if err != nil {
+		log.Warnf("failed to fetch Bilibili profile for manual member uid %d: %v", uid, err)
 		Fail(c, 400, "获取 B 站账号信息失败，请确认 UID 有效")
 		return
 	}
