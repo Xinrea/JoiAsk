@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -138,17 +140,46 @@ func (c *Client) Followers(ctx context.Context, uid int64, cookie string, limit 
 }
 
 func (c *Client) Profile(ctx context.Context, uid int64) (Profile, error) {
-	values := url.Values{}
-	values.Set("mid", strconv.FormatInt(uid, 10))
-	var response apiResponse[Profile]
-	if err := c.do(ctx, c.endpoint("/x/space/acc/info")+"?"+values.Encode(), "", &response); err != nil {
+	endpoint := "https://m.bilibili.com/space/" + strconv.FormatInt(uid, 10)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
 		return Profile{}, err
 	}
-	if response.Code != 0 {
-		return Profile{}, fmt.Errorf("获取 B 站用户信息失败: %s (%d)", response.Message, response.Code)
+	req.Header.Set("Accept", "text/html,application/xhtml+xml")
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("Pragma", "no-cache")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148")
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return Profile{}, fmt.Errorf("B 站移动端空间请求失败: %w", err)
 	}
-	if response.Data.MID != uid || response.Data.Name == "" {
-		return Profile{}, errors.New("B 站用户信息无效")
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return Profile{}, fmt.Errorf("B 站移动端空间返回 HTTP %d", resp.StatusCode)
 	}
-	return response.Data, nil
+	html, err := io.ReadAll(io.LimitReader(resp.Body, 10<<20))
+	if err != nil {
+		return Profile{}, fmt.Errorf("读取 B 站移动端空间失败: %w", err)
+	}
+	start := strings.Index(string(html), "window.__INITIAL_STATE__=")
+	if start < 0 {
+		return Profile{}, errors.New("B 站移动端页面缺少用户状态")
+	}
+	start += len("window.__INITIAL_STATE__=")
+	end := strings.Index(string(html[start:]), ";(function(){")
+	if end < 0 {
+		return Profile{}, errors.New("B 站移动端页面用户状态格式无效")
+	}
+	var state struct {
+		Space struct {
+			Info Profile `json:"info"`
+		} `json:"space"`
+	}
+	if err := json.Unmarshal(html[start:start+end], &state); err != nil {
+		return Profile{}, fmt.Errorf("解析 B 站移动端用户状态失败: %w", err)
+	}
+	if state.Space.Info.MID != uid || state.Space.Info.Name == "" || state.Space.Info.Face == "" {
+		return Profile{}, errors.New("B 站移动端用户信息无效")
+	}
+	return state.Space.Info, nil
 }

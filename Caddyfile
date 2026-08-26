@@ -26,7 +26,7 @@
 
 	# 上传的图片
 	handle /upload-img/* {
-		root * ./frontend/upload-img
+		root * ./frontend/public/upload-img
 		uri strip_prefix /upload-img
 		file_server
 	}

@@ -52,10 +52,10 @@ func TestValidateAccountAndFollowers(t *testing.T) {
 
 func TestProfile(t *testing.T) {
 	client := &Client{BaseURL: "https://example.test", HTTPClient: jsonClient(func(r *http.Request) string {
-		if r.URL.Path != "/x/space/acc/info" || r.URL.Query().Get("mid") != "123" {
+		if r.URL.Path != "/space/123" || !strings.Contains(r.Header.Get("User-Agent"), "iPhone") {
 			t.Fatalf("unexpected profile request: %s", r.URL.String())
 		}
-		return `{"code":0,"message":"0","data":{"mid":123,"name":"Bilibili User","face":"https://example.test/avatar.jpg","sign":"hello"}}`
+		return `<html><script>window.__INITIAL_STATE__={"space":{"info":{"mid":123,"name":"Bilibili User","face":"https://i1.hdslb.com/avatar.jpg"}}};(function(){})();</script></html>`
 	})}
 	profile, err := client.Profile(context.Background(), 123)
 	if err != nil || profile.MID != 123 || profile.Name != "Bilibili User" || profile.Face == "" {
