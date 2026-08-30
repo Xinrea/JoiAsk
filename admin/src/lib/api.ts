@@ -181,7 +181,7 @@ export async function getQuestions(params: {
   if (params.tag_id) searchParams.set('tag_id', params.tag_id.toString());
   if (params.is_spam !== undefined) searchParams.set('is_spam', params.is_spam.toString());
 
-  const res = await fetch(`${API_BASE}/question?${searchParams.toString()}`, {
+  const res = await fetch(`${API_BASE}/admin/question?${searchParams.toString()}`, {
     method: 'GET',
     credentials: 'include',
   });
