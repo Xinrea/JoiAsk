@@ -102,6 +102,7 @@ func Run() {
 		// Question
 		{
 			api.GET("/question", questionController.Get)
+			api.GET("/admin/question", authMiddleware, questionController.GetWithIdentity)
 			api.POST("/question", questionController.Post)
 			api.PUT("/question/:id", authMiddleware, questionController.Put)
 			api.POST("/question/:id/emoji", questionController.Emoji)

@@ -54,6 +54,83 @@ function formatDate(dateString: string) {
   return new Date(dateString).toLocaleString("zh-CN");
 }
 
+const IDENTITY_REVEAL_DELAY_SECONDS = 5;
+
+function AnonymousSubmitter({ question }: { question: Question }) {
+  const [isHovering, setIsHovering] = useState(false);
+  const [countdown, setCountdown] = useState(IDENTITY_REVEAL_DELAY_SECONDS);
+  const [isRevealed, setIsRevealed] = useState(false);
+
+  useEffect(() => {
+    if (!isHovering || isRevealed) return;
+
+    const timer = window.setInterval(() => {
+      setCountdown((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer);
+          setIsRevealed(true);
+          return 0;
+        }
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [isHovering, isRevealed]);
+
+  const showTip = () => setIsHovering(true);
+  const hideTip = () => {
+    setIsHovering(false);
+    setCountdown(IDENTITY_REVEAL_DELAY_SECONDS);
+    setIsRevealed(false);
+  };
+
+  return (
+    <span
+      className="relative inline-flex cursor-help text-muted-foreground"
+      tabIndex={0}
+      onMouseEnter={showTip}
+      onMouseLeave={hideTip}
+      onFocus={showTip}
+      onBlur={hideTip}
+    >
+      匿名
+      {isHovering && (
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-max max-w-[260px] -translate-x-1/2 rounded-md border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md"
+        >
+          {isRevealed ? (
+            question.bilibili_uid ? (
+              <span className="flex items-center gap-2">
+                {question.bilibili_avatar && (
+                  <img
+                    src={question.bilibili_avatar}
+                    alt=""
+                    className="h-7 w-7 shrink-0 rounded-full object-cover"
+                  />
+                )}
+                <span className="flex min-w-0 flex-col">
+                  <span className="max-w-[190px] truncate font-medium">
+                    {question.bilibili_name || "已登录用户"}
+                  </span>
+                  <span className="text-muted-foreground">
+                    UID {question.bilibili_uid}
+                  </span>
+                </span>
+              </span>
+            ) : (
+              "未登录投稿，无身份信息"
+            )
+          ) : (
+            <>身份将在 {countdown} 秒后显示</>
+          )}
+        </span>
+      )}
+    </span>
+  );
+}
+
 const EMOJI_MAP: Record<string, string> = {
   '[轴伊Joi收藏集动态表情包_跑了]': '/joi-emojis/paole.webp',
   '[轴伊Joi收藏集动态表情包_鞠躬]': '/joi-emojis/jugong.webp',
@@ -474,7 +551,7 @@ export function QuestionsPageContent({ isSpam }: QuestionsPageContentProps) {
                           {question.bilibili_avatar && <img src={question.bilibili_avatar} alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" />}
                           <span className="truncate" title={`UID ${question.bilibili_uid}`}>{question.bilibili_name}</span>
                         </a>
-                      ) : <span className="text-muted-foreground">匿名</span>}
+                      ) : <AnonymousSubmitter question={question} />}
                     </TableCell>
                     <TableCell className="text-center text-sm whitespace-nowrap">
                       {question.images_num}
