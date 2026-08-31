@@ -128,29 +128,12 @@ type QuestionModifyRequest struct {
 	IsSpam    *bool `json:"is_spam"`
 }
 
-type questionWithIdentityAlias database.Question
-
-type questionWithIdentity struct {
-	questionWithIdentityAlias
-	BilibiliUID *string `json:"bilibili_uid,omitempty"`
-}
-
 // Get questions
 func (*QuestionController) Get(c *gin.Context) {
 	// Prepare for auth
 	if sessions.Default(c).Get("authed") == true {
 		c.Set("authed", true)
 	}
-	getQuestions(c, false)
-}
-
-// GetWithIdentity returns submitter identities only through the authenticated
-// admin route. The public response continues to use Question.MarshalJSON.
-func (*QuestionController) GetWithIdentity(c *gin.Context) {
-	getQuestions(c, true)
-}
-
-func getQuestions(c *gin.Context, includeIdentity bool) {
 	var questionList []database.Question
 	var total int64
 	var request QuestionRequest
@@ -202,62 +185,12 @@ func getQuestions(c *gin.Context, includeIdentity bool) {
 		Fail(c, 500, "获取提问失败")
 		return
 	}
-	questions := any(questionList)
-	if includeIdentity {
-		questions = questionsWithIdentity(questionList)
-	}
 	Success(c, gin.H{
-		"questions": questions,
+		"questions": questionList,
 		"total":     total,
 		"page":      getPage(request.Page),
 		"page_size": getPageSize(request.PageSize),
 	})
-}
-
-func questionsWithIdentity(questions []database.Question) []questionWithIdentity {
-	uids := make([]int64, 0, len(questions))
-	for _, question := range questions {
-		if question.BilibiliUID != nil && (question.BilibiliName == "" || question.BilibiliAvatar == "") {
-			uids = append(uids, *question.BilibiliUID)
-		}
-	}
-
-	members := make(map[int64]database.User, len(uids))
-	if len(uids) > 0 {
-		var users []database.User
-		if err := database.DB.Where("bilibili_uid IN ?", uids).Find(&users).Error; err != nil {
-			log.Error("Failed to load question submitter identities: ", err)
-		}
-		for _, user := range users {
-			members[user.BilibiliUID] = user
-		}
-	}
-
-	result := make([]questionWithIdentity, 0, len(questions))
-	for i := range questions {
-		question := questions[i]
-		if question.BilibiliUID != nil {
-			if member, ok := members[*question.BilibiliUID]; ok {
-				if question.BilibiliName == "" {
-					question.BilibiliName = member.BilibiliName
-				}
-				if question.BilibiliAvatar == "" {
-					question.BilibiliAvatar = member.BilibiliAvatar
-				}
-			}
-		}
-
-		var uid *string
-		if question.BilibiliUID != nil {
-			value := strconv.FormatInt(*question.BilibiliUID, 10)
-			uid = &value
-		}
-		result = append(result, questionWithIdentity{
-			questionWithIdentityAlias: questionWithIdentityAlias(question),
-			BilibiliUID:               uid,
-		})
-	}
-	return result
 }
 
 func (this *QuestionController) Put(c *gin.Context) {
@@ -323,11 +256,11 @@ func (*QuestionController) Post(c *gin.Context) {
 	var q database.Question
 	if memberLoggedIn {
 		q.BilibiliUID = &member.BilibiliUID
-		q.BilibiliName = member.BilibiliName
-		q.BilibiliAvatar = member.BilibiliAvatar
 	}
 	if realName {
 		q.IsRealName = true
+		q.BilibiliName = member.BilibiliName
+		q.BilibiliAvatar = member.BilibiliAvatar
 	}
 	q.TagID = int(tag.ID)
 	q.Content = strings.Trim(c.PostForm("content"), " \r\n\t")
