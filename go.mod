@@ -67,7 +67,7 @@ require (
 	github.com/gin-contrib/cors v1.6.0
 	github.com/gin-contrib/sessions v0.0.4
 	github.com/satori/go.uuid v1.2.0 // indirect
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.8.3
 	github.com/spf13/viper v1.10.1
 	gorm.io/driver/mysql v1.3.2
 	gorm.io/gorm v1.23.4
