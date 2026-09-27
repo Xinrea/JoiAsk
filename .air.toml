@@ -1,0 +1,15 @@
+root = "."
+tmp_dir = "/tmp/joiask-air"
+
+[build]
+cmd = "go build -o /tmp/joiask-air/joiask ./cmd/cmd.go"
+delay = 500
+entrypoint = ["/tmp/joiask-air/joiask"]
+exclude_dir = ["admin", "data", "frontend", "uploads", ".git"]
+include_ext = ["go"]
+kill_delay = "500ms"
+send_interrupt = true
+stop_on_error = true
+
+[misc]
+clean_on_exit = true

@@ -37,11 +37,8 @@ class WSManager {
   private isConnecting = false;
 
   private getWsUrl(): string {
-    const wsProtocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsHost = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-      ? 'localhost:8080'
-      : window.location.host;
-    return `${wsProtocol}//${wsHost}/api/ws`;
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${wsProtocol}//${window.location.host}/api/ws`;
   }
 
   private connect() {

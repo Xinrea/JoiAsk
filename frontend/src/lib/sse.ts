@@ -19,10 +19,7 @@ export function createSSEConnection(
   onEmoji: (cardId: number, emojis: Array<{ value: string; count: number }>) => void,
   onArchive: (cardId: number) => void
 ): EventSource {
-  // Connect directly to backend for SSE (Next.js rewrites may not handle SSE properly)
-  const sseUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-    ? 'http://localhost:8080/api/sse'
-    : '/api/sse';
+  const sseUrl = '/api/sse';
 
   console.log('[SSE] Connecting to:', sseUrl);
   const sse = new EventSource(sseUrl);

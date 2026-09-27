@@ -1,0 +1,14 @@
+{
+  "db_type": "sqlite",
+  "sqlite": "/data/joiask.db",
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080
+  },
+  "security": {
+    "session_secret": "dev-only-session-secret-change-in-production",
+    "bilibili_cookie_key": "dev-only-cookie-key-change-in-production",
+    "secure_cookie": false
+  },
+  "storage_type": "local"
+}

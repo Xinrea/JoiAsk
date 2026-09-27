@@ -38,7 +38,7 @@ docker run -d --restart always \
 
 #### 3. 访问服务
 
-容器只暴露一个端口（80），内部 Nginx 自动处理路由：
+容器只暴露一个端口（80），内部 Caddy 自动处理路由：
 
 - 前端提问箱: `http://localhost/`
 - 管理后台: `http://localhost/admin`

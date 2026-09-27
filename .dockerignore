@@ -1,2 +1,4 @@
 **/.git
+**/.next
 **/node_modules
+**/out

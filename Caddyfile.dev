@@ -1,0 +1,33 @@
+{
+	admin off
+	auto_https off
+}
+
+:80 {
+	request_body {
+		max_size 30MB
+	}
+
+	handle /api/* {
+		reverse_proxy {$BACKEND_UPSTREAM:127.0.0.1:8080}
+	}
+
+	handle_path /upload-img/* {
+		root * /srv/uploads
+		file_server
+	}
+
+	@admin path /admin /admin/*
+	handle @admin {
+		reverse_proxy {$ADMIN_UPSTREAM:127.0.0.1:3001}
+	}
+
+	handle {
+		reverse_proxy {$FRONTEND_UPSTREAM:127.0.0.1:3000}
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

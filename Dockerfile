@@ -1,31 +1,35 @@
 FROM node:22 AS frontend-builder
 WORKDIR /frontend
 COPY frontend/package*.json ./
-RUN npm install
+RUN npm ci
 COPY frontend .
 RUN npm run build
 
 FROM node:22 AS admin-builder
 WORKDIR /admin
 COPY admin/package*.json ./
-RUN npm install
+RUN npm ci
 COPY admin .
 RUN npm run build
 
-FROM golang:1.23 AS backend-builder
+FROM golang:1.25-alpine AS backend-builder
 WORKDIR /work
+RUN apk add --no-cache gcc musl-dev
+ENV CGO_CFLAGS="-D_LARGEFILE64_SOURCE"
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . .
-RUN go build -o jask cmd/cmd.go
+RUN CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o /jask ./cmd/cmd.go
 
-FROM ubuntu:latest
-RUN apt-get update && apt-get install -y ca-certificates nginx
+FROM caddy:2-alpine
 WORKDIR /work
 COPY --from=frontend-builder /frontend/out ./frontend
 COPY --from=admin-builder /admin/out ./admin
-COPY --from=backend-builder /work/jask ./
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY --from=backend-builder /jask ./
+COPY Caddyfile /etc/caddy/Caddyfile
 ENV GIN_MODE=release
-COPY start.sh ./
-RUN chmod +x start.sh
+COPY start.sh /usr/local/bin/start-joiask
+RUN mkdir -p /work/frontend/public/upload-img \
+	&& chmod +x /usr/local/bin/start-joiask
 EXPOSE 80
-CMD ["./start.sh"]
+CMD ["start-joiask"]

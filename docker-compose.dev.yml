@@ -1,0 +1,65 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: frontend-dev
+    environment:
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+      - frontend-next-cache:/app/.next
+
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: admin-dev
+    environment:
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./admin:/app
+      - admin-node-modules:/app/node_modules
+      - admin-next-cache:/app/.next
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: backend-dev
+    environment:
+      JOIASK_CONFIG: /app/config/config_dev.json
+    volumes:
+      - .:/app
+      - backend-go-modules:/go/pkg/mod
+      - backend-go-build:/root/.cache/go-build
+      - backend-data:/data
+      - uploads:/app/frontend/public/upload-img
+
+  caddy:
+    image: caddy:2-alpine
+    depends_on:
+      - frontend
+      - admin
+      - backend
+    command: ["caddy", "run", "--watch", "--config", "/etc/caddy/Caddyfile"]
+    environment:
+      ADMIN_UPSTREAM: admin:3001
+      BACKEND_UPSTREAM: backend:8080
+      FRONTEND_UPSTREAM: frontend:3000
+    ports:
+      - "${DEV_PORT:-80}:80"
+    volumes:
+      - ./Caddyfile.dev:/etc/caddy/Caddyfile:ro
+      - uploads:/srv/uploads:ro
+
+volumes:
+  frontend-node-modules:
+  frontend-next-cache:
+  admin-node-modules:
+  admin-next-cache:
+  backend-go-modules:
+  backend-go-build:
+  backend-data:
+  uploads:
