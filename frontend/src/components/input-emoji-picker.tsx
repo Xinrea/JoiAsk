@@ -51,7 +51,7 @@ export function InputEmojiPicker({ onSelect }: InputEmojiPickerProps) {
       <button
         type="button"
         onClick={() => setPanelOpen(!panelOpen)}
-        className="p-2 text-primary hover:bg-accent rounded transition-all duration-200 border-2 border-dashed border-[var(--fabric-stitch)]"
+        className="p-2 text-primary hover:bg-accent rounded transition-all duration-200 border-2 border-dashed border-[var(--color-fabric-stitch)]"
         title="插入表情"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -62,7 +62,7 @@ export function InputEmojiPicker({ onSelect }: InputEmojiPickerProps) {
         </svg>
       </button>
       {panelOpen && (
-        <div className="absolute bottom-full mb-2 right-0 w-[280px] z-[999] bg-card p-2 rounded border-2 border-dashed border-[var(--fabric-stitch)] grid grid-cols-5 gap-1 shadow-lg">
+        <div className="absolute bottom-full mb-2 right-0 w-[280px] z-[999] bg-card p-2 rounded border-2 border-dashed border-[var(--color-fabric-stitch)] grid grid-cols-5 gap-1 shadow-lg">
           {INPUT_EMOJIS.map(({ name, tag, url }) => (
             <div
               key={tag}

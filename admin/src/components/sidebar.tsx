@@ -12,6 +12,7 @@ import {
   Users,
   UserCheck,
   Settings,
+  Palette,
   Home,
   LogOut,
 } from "lucide-react";
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/dashboard/users", label: "账号管理", icon: Users },
   { href: "/dashboard/members", label: "注册用户", icon: UserCheck },
   { href: "/dashboard/settings", label: "设置", icon: Settings },
+  { href: "/dashboard/custom", label: "自定义", icon: Palette },
 ];
 
 export function Sidebar() {

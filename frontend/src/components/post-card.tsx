@@ -241,7 +241,7 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
           onMouseEnter={handleMouseEnter}
         >
           <div
-            className={`card h-full w-full fabric-card shadow-lg p-4 text-muted-foreground flex flex-col justify-between border-2 border-dashed border-[var(--fabric-stitch)] ${
+            className={`card h-full w-full fabric-card shadow-lg p-4 text-muted-foreground flex flex-col justify-between border-2 border-dashed border-[var(--color-fabric-stitch)] ${
               data.is_rainbow ? 'special' : ''
             }`}
           >
@@ -278,7 +278,7 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
                     className="stamp float-right w-20 h-20 cursor-pointer p-2.5 text-center transition-transform duration-260 hover:translate-x-[-10px] hover:translate-y-[10px] relative z-[1]"
                     onClick={() => setShowImageModal(true)}
                     style={{
-                      background: 'radial-gradient(transparent 0px, transparent 4px, var(--card) 4px, var(--card))',
+                      background: 'radial-gradient(transparent 0px, transparent 4px, var(--color-surface) 4px, var(--color-surface))',
                       backgroundSize: '20px 20px',
                       backgroundPosition: '-10px -10px',
                       filter: 'drop-shadow(-5px -5px 10px rgba(139, 111, 71, 0.1))',
@@ -335,7 +335,7 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
               />
               {isLoggedIn && !isArchived && (
                 <div
-                  className="cursor-pointer inline-block select-none ml-2 border-2 border-dashed border-[var(--fabric-stitch)] rounded px-1 text-primary hover:bg-accent transition-all duration-200"
+                  className="cursor-pointer inline-block select-none ml-2 border-2 border-dashed border-[var(--color-fabric-stitch)] rounded px-1 text-primary hover:bg-accent transition-all duration-200"
                   onClick={handleArchive}
                 >
                   归档此卡

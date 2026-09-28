@@ -94,7 +94,7 @@ export function EmojiPicker({ questionId, emojis: emojisProp }: EmojiPickerProps
   return (
     <div ref={pickerRef} className="picker inline-block select-none relative">
       {panelOpen && (
-        <div className="panel absolute bottom-12 right-4 w-[180px] z-[999] bg-card p-2.5 rounded border-2 border-dashed border-[var(--fabric-stitch)] grid grid-cols-4 shadow-lg">
+        <div className="panel absolute bottom-12 right-4 w-[180px] z-[999] bg-card p-2.5 rounded border-2 border-dashed border-[var(--color-fabric-stitch)] grid grid-cols-4 shadow-lg">
           {EMOJIS.map(({ id, value, asset }) => (
             <div
               key={id}
@@ -114,7 +114,7 @@ export function EmojiPicker({ questionId, emojis: emojisProp }: EmojiPickerProps
         {emojis.map(({ value, count }) => (
           <div
             key={value}
-            className="emoji-button flex text-base items-center cursor-pointer m-0.5 px-1 border border-dashed border-[var(--fabric-stitch)] rounded hover:bg-accent transition-all duration-200"
+            className="emoji-button flex text-base items-center cursor-pointer m-0.5 px-1 border border-dashed border-[var(--color-fabric-stitch)] rounded hover:bg-accent transition-all duration-200"
             onClick={() => handlePostEmoji(value)}
           >
             {EMOJI_MAP[value] ? (
@@ -126,7 +126,7 @@ export function EmojiPicker({ questionId, emojis: emojisProp }: EmojiPickerProps
           </div>
         ))}
         <div
-          className="emoji-button flex text-base items-center cursor-pointer m-0.5 px-1 border border-dashed border-[var(--fabric-stitch)] rounded hover:bg-accent transition-all duration-200"
+          className="emoji-button flex text-base items-center cursor-pointer m-0.5 px-1 border border-dashed border-[var(--color-fabric-stitch)] rounded hover:bg-accent transition-all duration-200"
           onClick={() => setPanelOpen(!panelOpen)}
         >
           <div

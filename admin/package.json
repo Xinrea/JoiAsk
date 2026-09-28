@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "@hookform/resolvers": "^5.2.2",
     "@types/md5": "^2.3.6",
     "class-variance-authority": "^0.7.1",

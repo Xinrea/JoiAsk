@@ -39,6 +39,11 @@ export interface Question {
 }
 
 export interface Config {
+  site_name: string;
+  site_description: string;
+  logo_url: string;
+  favicon_url: string;
+  custom_css: string;
   announcement: string;
   require_verified_user_to_post: boolean;
 }
@@ -143,6 +148,17 @@ export async function updateConfig(config: Partial<Config>): Promise<ApiResponse
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(config),
+  });
+  return res.json();
+}
+
+export async function uploadConfigAsset(file: File): Promise<ApiResponse<{ url: string }>> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(`${API_BASE}/config/asset`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
   });
   return res.json();
 }

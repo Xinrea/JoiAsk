@@ -112,7 +112,7 @@ function TagDetailContent() {
         className="my-12 px-2 py-1 text-center text-5xl leading-[50px] text-primary opacity-80"
         style={{
           fontFamily: 'system-ui',
-          boxShadow: '0 0 0 3px var(--primary), 0 0 0 2px var(--primary) inset',
+          boxShadow: '0 0 0 3px var(--color-brand), 0 0 0 2px var(--color-brand) inset',
           border: '2px dashed transparent',
           borderRadius: '4px',
           width: '300px',
@@ -144,7 +144,7 @@ function TagDetailContent() {
             setQuestions([]);
           }}
         >
-          <SelectTrigger className="w-[120px] fabric-card border-2 border-dashed border-[var(--fabric-stitch)]">
+          <SelectTrigger className="w-[120px] fabric-card border-2 border-dashed border-[var(--color-fabric-stitch)]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

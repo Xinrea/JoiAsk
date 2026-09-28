@@ -16,6 +16,10 @@ import (
 var DB *gorm.DB
 
 const DefaultTagName = "提问箱"
+const DefaultSiteName = "JoiAsk 提问箱"
+const DefaultSiteDescription = "JoiAsk 提问箱"
+const DefaultLogoURL = "/favicon.png"
+const DefaultFaviconURL = "/favicon.png"
 
 // Init opens connection and try to initialize the database.
 func Init() {
@@ -62,14 +66,36 @@ func initializeDB() {
 	if DB.First(&config).RowsAffected == 0 {
 		log.Info("Initializing default config.")
 		if err := DB.Create(&Config{
-			Announcement: "提问内容将在审核后公开",
-			SpamPrompt:   deepseek.DefaultSpamPrompt,
+			SiteName:        DefaultSiteName,
+			SiteDescription: DefaultSiteDescription,
+			LogoURL:         DefaultLogoURL,
+			FaviconURL:      DefaultFaviconURL,
+			Announcement:    "提问内容将在审核后公开",
+			SpamPrompt:      deepseek.DefaultSpamPrompt,
 		}).Error; err != nil {
 			log.Fatal("Failed to initialize default config.", err)
 		}
-	} else if strings.TrimSpace(config.SpamPrompt) == "" {
-		if err := DB.Model(&config).Update("spam_prompt", deepseek.DefaultSpamPrompt).Error; err != nil {
-			log.Fatal("Failed to initialize spam prompt.", err)
+	} else {
+		updates := map[string]interface{}{}
+		if strings.TrimSpace(config.SiteName) == "" {
+			updates["site_name"] = DefaultSiteName
+		}
+		if strings.TrimSpace(config.SiteDescription) == "" {
+			updates["site_description"] = DefaultSiteDescription
+		}
+		if strings.TrimSpace(config.LogoURL) == "" {
+			updates["logo_url"] = DefaultLogoURL
+		}
+		if strings.TrimSpace(config.FaviconURL) == "" {
+			updates["favicon_url"] = DefaultFaviconURL
+		}
+		if strings.TrimSpace(config.SpamPrompt) == "" {
+			updates["spam_prompt"] = deepseek.DefaultSpamPrompt
+		}
+		if len(updates) > 0 {
+			if err := DB.Model(&config).Updates(updates).Error; err != nil {
+				log.Fatal("Failed to initialize config defaults.", err)
+			}
 		}
 	}
 	// Initialize default tag.

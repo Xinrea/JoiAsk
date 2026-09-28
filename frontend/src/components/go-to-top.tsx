@@ -28,7 +28,7 @@ export function GoToTop() {
   return (
     <button
       onClick={scrollToTop}
-      className={`fixed bottom-8 right-8 z-50 p-3 rounded-full bg-primary text-primary-foreground border-2 border-dashed border-[var(--fabric-stitch)] shadow-lg transition-all duration-300 hover:bg-[#6b5637] hover:scale-110 active:scale-95 ${
+      className={`fixed bottom-8 right-8 z-50 p-3 rounded-full bg-primary text-primary-foreground border-2 border-dashed border-[var(--color-fabric-stitch)] shadow-lg transition-all duration-300 hover:bg-[#6b5637] hover:scale-110 active:scale-95 ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'
       }`}
       aria-label="回到顶部"

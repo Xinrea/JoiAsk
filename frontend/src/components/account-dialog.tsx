@@ -163,7 +163,7 @@ export function AccountDialog({
       onMouseDown={onClose}
     >
       <div
-        className="w-full max-w-[420px] rounded-md border-2 border-dashed border-[var(--fabric-stitch)] bg-card p-5 text-foreground shadow-xl"
+        className="w-full max-w-[420px] rounded-md border-2 border-dashed border-[var(--color-fabric-stitch)] bg-card p-5 text-foreground shadow-xl"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="mb-5 flex items-center justify-between">

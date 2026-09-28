@@ -4,26 +4,33 @@ set -eu
 ./jask &
 backend_pid=$!
 
+cd /work/frontend
+HOSTNAME=127.0.0.1 PORT=3000 node server.js &
+frontend_pid=$!
+cd /
+
 caddy run --config /etc/caddy/Caddyfile --adapter caddyfile &
 caddy_pid=$!
 
 stop_services() {
 	trap - EXIT INT TERM
-	kill "$backend_pid" "$caddy_pid" 2>/dev/null || true
-	wait "$backend_pid" "$caddy_pid" 2>/dev/null || true
+	kill "$backend_pid" "$frontend_pid" "$caddy_pid" 2>/dev/null || true
+	wait "$backend_pid" "$frontend_pid" "$caddy_pid" 2>/dev/null || true
 }
 
 trap stop_services EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-while kill -0 "$backend_pid" 2>/dev/null && kill -0 "$caddy_pid" 2>/dev/null; do
+while kill -0 "$backend_pid" 2>/dev/null && kill -0 "$frontend_pid" 2>/dev/null && kill -0 "$caddy_pid" 2>/dev/null; do
 	sleep 1
 done
 
 status=0
 if ! kill -0 "$backend_pid" 2>/dev/null; then
 	wait "$backend_pid" || status=$?
+elif ! kill -0 "$frontend_pid" 2>/dev/null; then
+	wait "$frontend_pid" || status=$?
 else
 	wait "$caddy_pid" || status=$?
 fi

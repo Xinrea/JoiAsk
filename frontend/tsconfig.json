@@ -20,7 +20,9 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@joiask/content-markup": ["../shared/content-markup.ts"]
+      "@joiask/content-markup": ["../shared/content-markup.ts"],
+      "@joiask/default-custom-css": ["../shared/default-custom-css.ts"],
+      "@joiask/custom-css-presets": ["../shared/custom-css-presets.ts"]
     }
   },
   "include": [

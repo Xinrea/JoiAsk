@@ -282,7 +282,7 @@ export default function HomePage() {
               <div
                 id="content-tag-help"
                 role="tooltip"
-                className="pointer-events-none invisible absolute right-0 top-full mt-2 w-72 rounded-lg border-2 border-dashed border-[var(--fabric-stitch)] bg-card p-3 text-left text-xs leading-5 text-foreground opacity-0 shadow-lg transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+                className="pointer-events-none invisible absolute right-0 top-full mt-2 w-72 rounded-lg border-2 border-dashed border-[var(--color-fabric-stitch)] bg-card p-3 text-left text-xs leading-5 text-foreground opacity-0 shadow-lg transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
               >
                 <p className="mb-1 font-semibold text-primary">投稿格式标签</p>
                 <p><code>[hide]内容[/hide]</code> 隐藏内容</p>
@@ -306,7 +306,7 @@ export default function HomePage() {
         <div className={`relative ${isRainbow ? 'rainbow-bg' : ''}`}>
           <textarea
             ref={textareaRef}
-            className={`w-full min-h-[128px] p-4 text-foreground bg-secondary/50 border-2 border-dashed border-[var(--fabric-stitch)] rounded-lg resize-none focus:bg-card focus:border-primary focus:outline-none transition-all duration-220 ${
+            className={`w-full min-h-[128px] p-4 text-foreground bg-secondary/50 border-2 border-dashed border-[var(--color-fabric-stitch)] rounded-lg resize-none focus:bg-card focus:border-primary focus:outline-none transition-all duration-220 ${
               isRainbow ? 'rainbow-bg' : ''
             }`}
             style={{ fontFamily: '宋体, Fangsong, STFangsong, sans-serif' }}
@@ -366,7 +366,7 @@ export default function HomePage() {
 
         {/* Success Message */}
         {submitSuccess && (
-          <div className="absolute inset-0 flex bg-card text-foreground text-center items-center justify-center z-10 rounded-md border-2 border-dashed border-[var(--fabric-stitch)]">
+          <div className="absolute inset-0 flex bg-card text-foreground text-center items-center justify-center z-10 rounded-md border-2 border-dashed border-[var(--color-fabric-stitch)]">
             提问已提交审核，内容将会在审核通过后放出
           </div>
         )}
@@ -376,7 +376,7 @@ export default function HomePage() {
       {previewCard && <PostCard data={previewCard} isLoggedIn={false} />}
 
       {/* Filters */}
-      <div className="max-w-[600px] w-5/6 flex justify-between items-center mb-4 p-3 rounded-md bg-card border-2 border-dashed border-[var(--fabric-stitch)]">
+      <div className="max-w-[600px] w-5/6 flex justify-between items-center mb-4 p-3 rounded-md bg-card border-2 border-dashed border-[var(--color-fabric-stitch)]">
         <Label className="flex items-center cursor-pointer text-primary">
           <Checkbox
             checked={hideArchive}
@@ -397,7 +397,7 @@ export default function HomePage() {
             setQuestions([]);
           }}
         >
-          <SelectTrigger className="w-[120px] fabric-card border-2 border-dashed border-[var(--fabric-stitch)]">
+          <SelectTrigger className="w-[120px] fabric-card border-2 border-dashed border-[var(--color-fabric-stitch)]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

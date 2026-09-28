@@ -92,39 +92,6 @@
   --sidebar-ring: rgba(196, 184, 168, 0.5);
 }
 
-.dark {
-  --background: #2d2a26;
-  --foreground: #e8e4dc;
-  --card: #36322e;
-  --card-foreground: #e8e4dc;
-  --popover: #36322e;
-  --popover-foreground: #e8e4dc;
-  --primary: #c4b8a8;
-  --primary-foreground: #2d2a26;
-  --secondary: #3d3934;
-  --secondary-foreground: #e8e4dc;
-  --muted: #3d3934;
-  --muted-foreground: #a39e96;
-  --accent: #3d3934;
-  --accent-foreground: #e8e4dc;
-  --destructive: #c46b66;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.1);
-  --ring: rgba(196, 184, 168, 0.5);
-  --sidebar: #252220;
-  --sidebar-foreground: #e8e4dc;
-  --sidebar-primary: #c4b8a8;
-  --sidebar-primary-foreground: #2d2a26;
-  --sidebar-accent: rgba(255, 255, 255, 0.06);
-  --sidebar-accent-foreground: #e8e4dc;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
-  --sidebar-ring: rgba(196, 184, 168, 0.4);
-  --fabric-shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.2);
-  --fabric-shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.25);
-  --fabric-shadow-active: 0 1px 4px rgba(0, 0, 0, 0.2);
-  --fabric-stitch: rgba(255, 255, 255, 0.1);
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -170,38 +137,6 @@
     background-size: 6px 6px, 6px 6px, 12px 12px, 12px 12px, 100px 100px, 120px 120px;
   }
 
-  .dark body {
-    background-image:
-      repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(255, 255, 255, 0.015) 2px,
-        rgba(255, 255, 255, 0.015) 3px
-      ),
-      repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 2px,
-        rgba(255, 255, 255, 0.015) 2px,
-        rgba(255, 255, 255, 0.015) 3px
-      ),
-      repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 4px,
-        rgba(255, 255, 255, 0.008) 4px,
-        rgba(255, 255, 255, 0.008) 5px
-      ),
-      repeating-linear-gradient(
-        -45deg,
-        transparent,
-        transparent 4px,
-        rgba(255, 255, 255, 0.008) 4px,
-        rgba(255, 255, 255, 0.008) 5px
-      );
-    background-size: 6px 6px, 6px 6px, 12px 12px, 12px 12px;
-  }
 }
 
 /* 缝线风格边框：模拟手工缝制的虚线效果 */
@@ -220,9 +155,6 @@
     0 2px 4px rgba(61, 57, 52, 0.06);
 }
 
-.dark .fabric-stitched {
-  border-color: rgba(255, 255, 255, 0.15);
-}
 
 /* 柔和阴影与过渡 */
 .fabric-shadow {
@@ -273,16 +205,6 @@
     0 1px 3px rgba(61, 57, 52, 0.08);
 }
 
-.dark .fabric-label {
-  background: linear-gradient(135deg,
-    rgba(61, 57, 52, 0.6) 0%,
-    rgba(54, 50, 46, 0.7) 100%);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-    0 2px 6px rgba(0, 0, 0, 0.3);
-}
 
 /* 布料纹理卡片 */
 .fabric-card {
@@ -300,25 +222,6 @@
       transparent 1px,
       rgba(61, 57, 52, 0.02) 1px,
       rgba(61, 57, 52, 0.02) 2px
-    );
-  background-size: 4px 4px;
-}
-
-.dark .fabric-card {
-  background-image:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 1px,
-      rgba(255, 255, 255, 0.015) 1px,
-      rgba(255, 255, 255, 0.015) 2px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 1px,
-      rgba(255, 255, 255, 0.015) 1px,
-      rgba(255, 255, 255, 0.015) 2px
     );
   background-size: 4px 4px;
 }

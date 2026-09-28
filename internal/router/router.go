@@ -113,6 +113,7 @@ func Run() {
 		{
 			api.GET("/config", configController.Get)
 			api.PUT("/config", authMiddleware, configController.Put)
+			api.POST("/config/asset", authMiddleware, configController.UploadAsset)
 			api.GET("/settings", authMiddleware, configController.GetSettings)
 			api.PUT("/settings", authMiddleware, configController.PutSettings)
 		}

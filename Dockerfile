@@ -25,7 +25,10 @@ RUN CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o /jask ./cmd/cmd.go
 
 FROM caddy:2-alpine
 WORKDIR /work
-COPY --from=frontend-builder /workspace/frontend/out ./frontend
+RUN apk add --no-cache nodejs
+COPY --from=frontend-builder /workspace/frontend/.next/standalone/frontend/. ./frontend
+COPY --from=frontend-builder /workspace/frontend/.next/static ./frontend/.next/static
+COPY --from=frontend-builder /workspace/frontend/public ./frontend/public
 COPY --from=admin-builder /workspace/admin/out ./admin
 COPY --from=backend-builder /jask ./
 COPY Caddyfile /etc/caddy/Caddyfile

@@ -37,6 +37,11 @@ export interface Question {
 }
 
 export interface Config {
+  site_name: string;
+  site_description: string;
+  logo_url: string;
+  favicon_url: string;
+  custom_css: string;
   announcement: string;
   require_verified_user_to_post: boolean;
 }

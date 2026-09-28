@@ -115,6 +115,11 @@ type Admin struct {
 
 type Config struct {
 	BaseModel
+	SiteName                  string `gorm:"size:255" json:"site_name"`
+	SiteDescription           string `gorm:"size:500" json:"site_description"`
+	LogoURL                   string `gorm:"size:1024" json:"logo_url"`
+	FaviconURL                string `gorm:"size:1024" json:"favicon_url"`
+	CustomCSS                 string `gorm:"type:text" json:"custom_css"`
 	Announcement              string `json:"announcement"`
 	RequireVerifiedUserToPost bool   `gorm:"not null;default:false" json:"require_verified_user_to_post"`
 	DeepSeekAPIKey            string `json:"-"`

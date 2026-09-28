@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import path from "node:path";
 
 const nextConfig: NextConfig = {
-  output: 'export',
+  output: 'standalone',
   trailingSlash: true,
   turbopack: {
     root: path.resolve(__dirname, '..'),

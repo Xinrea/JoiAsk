@@ -27,9 +27,7 @@
 	}
 
 	handle {
-		root * /work/frontend
-		try_files {path} {path}/ /index.html
-		file_server
+		reverse_proxy 127.0.0.1:3000
 	}
 
 	log {

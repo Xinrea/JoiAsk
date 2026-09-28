@@ -13,9 +13,9 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 border border-dashed border-white/30",
         outline:
-          "border-2 border-dashed border-[var(--fabric-stitch)] bg-card shadow-xs hover:bg-accent hover:text-accent-foreground transition-all duration-220",
+          "border-2 border-dashed border-[var(--color-fabric-stitch)] bg-card shadow-xs hover:bg-accent hover:text-accent-foreground transition-all duration-220",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-dashed border-[var(--fabric-stitch)]",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-dashed border-[var(--color-fabric-stitch)]",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 transition-all duration-220",
         link: "text-primary underline-offset-4 hover:underline",

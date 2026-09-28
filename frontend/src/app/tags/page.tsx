@@ -22,7 +22,7 @@ export default function TagsPage() {
         {tags.map((tag, index) => (
           <div
             key={tag.id}
-            className={`${index !== tags.length - 1 ? 'border-b-2 border-dashed border-[var(--fabric-stitch)]' : ''}`}
+            className={`${index !== tags.length - 1 ? 'border-b-2 border-dashed border-[var(--color-fabric-stitch)]' : ''}`}
           >
             <div className="flex items-center justify-between px-5 py-2.5">
               <Link
