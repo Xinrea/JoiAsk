@@ -330,3 +330,121 @@
 *::-webkit-scrollbar-corner {
   background: var(--secondary);
 }
+
+/* Submitted-content markup */
+.content-markup-link {
+  color: #00a1d6;
+  text-decoration: underline;
+}
+
+.content-markup-emoji {
+  display: inline-block;
+  width: 64px;
+  height: 64px;
+  margin: 0 2px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.content-effect-hide {
+  color: #5a4e3f;
+  background: #5a4e3f;
+  border-radius: 2px;
+  box-decoration-break: clone;
+  cursor: pointer;
+  transition: color 260ms ease, background-color 260ms ease;
+  -webkit-box-decoration-break: clone;
+}
+
+.content-effect-hide:not([data-revealed="true"]) * {
+  color: inherit !important;
+  opacity: 0;
+}
+
+.content-effect-hide:hover,
+.content-effect-hide[data-revealed="true"] {
+  color: #faf7f2;
+}
+
+.content-effect-hide:hover *,
+.content-effect-hide[data-revealed="true"] * {
+  color: inherit !important;
+  opacity: 1;
+}
+
+.content-effect-hide:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.content-effect-big,
+.content-effect-shake {
+  display: inline-block;
+  transform-origin: center;
+}
+
+.content-effect-big {
+  animation: content-effect-big 1.4s ease-in-out infinite;
+}
+
+.content-effect-shake {
+  animation: content-effect-shake 360ms linear infinite;
+}
+
+.content-animations-paused .content-effect-big,
+.content-animations-paused .content-effect-shake {
+  animation-play-state: paused;
+}
+
+@keyframes content-effect-big {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(var(--content-effect-scale));
+  }
+}
+
+@keyframes content-effect-shake {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0);
+  }
+  20% {
+    transform:
+      translate(
+        var(--content-effect-shift-negative),
+        var(--content-effect-shift)
+      )
+      rotate(var(--content-effect-rotation-negative));
+  }
+  40% {
+    transform:
+      translate(var(--content-effect-shift), 0)
+      rotate(var(--content-effect-rotation));
+  }
+  60% {
+    transform:
+      translate(
+        var(--content-effect-shift-negative-half),
+        var(--content-effect-shift-negative)
+      )
+      rotate(var(--content-effect-rotation-negative));
+  }
+  80% {
+    transform:
+      translate(
+        var(--content-effect-shift-half),
+        var(--content-effect-shift-half)
+      )
+      rotate(var(--content-effect-rotation));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content-effect-big,
+  .content-effect-shake {
+    animation: none;
+  }
+}

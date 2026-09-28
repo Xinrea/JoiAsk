@@ -18,6 +18,7 @@ import { GoToTop } from '@/components/go-to-top';
 import { getQuestions, getTags, getConfig, getInfo, createQuestion, Tag, Question } from '@/lib/api';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useAccountAuth } from '@/lib/account-auth';
+import { CircleHelp } from 'lucide-react';
 
 export default function HomePage() {
 	const { user: accountUser, openAccountDialog } = useAccountAuth();
@@ -146,25 +147,32 @@ export default function HomePage() {
     localStorage.setItem('ask_content', e.target.value);
   };
 
-  const handleEmojiInsert = (tag: string) => {
+  const replaceSelection = (replacement: string) => {
     const textarea = textareaRef.current;
-    if (!textarea) {
-      setContent((prev) => prev + tag);
-      localStorage.setItem('ask_content', content + tag);
+    const start = textarea?.selectionStart ?? content.length;
+    const end = textarea?.selectionEnd ?? content.length;
+    const newContent = content.slice(0, start) + replacement + content.slice(end);
+
+    if (newContent.length > 800) {
+      alert('添加表情后内容不能超过 800 字');
       return;
     }
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const newContent = content.slice(0, start) + tag + content.slice(end);
     setContent(newContent);
     localStorage.setItem('ask_content', newContent);
 
-    // Restore cursor position after the inserted emoji
     setTimeout(() => {
+      if (!textarea) return;
       textarea.focus();
-      textarea.setSelectionRange(start + tag.length, start + tag.length);
+      textarea.setSelectionRange(
+        start + replacement.length,
+        start + replacement.length
+      );
     }, 0);
+  };
+
+  const handleEmojiInsert = (tag: string) => {
+    replaceSelection(tag);
   };
 
   const handleSubmit = async () => {
@@ -249,18 +257,44 @@ export default function HomePage() {
       <div className="ask max-w-[600px] w-5/6 relative my-8 p-5 flex flex-col rounded-md fabric-form transition-all duration-220">
         {/* Tag Select */}
         <div className="mb-2.5">
-          <Select value={selectedTag} onValueChange={setSelectedTag}>
-            <SelectTrigger className="w-[140px] fabric-pill border-none text-primary text-xs">
-              <SelectValue placeholder="选择话题" />
-            </SelectTrigger>
-            <SelectContent>
-              {tags.map((tag) => (
-                <SelectItem key={tag.id} value={tag.id.toString()}>
-                  #{tag.tag_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center justify-between">
+            <Select value={selectedTag} onValueChange={setSelectedTag}>
+              <SelectTrigger className="w-[140px] fabric-pill border-none text-primary text-xs">
+                <SelectValue placeholder="选择话题" />
+              </SelectTrigger>
+              <SelectContent>
+                {tags.map((tag) => (
+                  <SelectItem key={tag.id} value={tag.id.toString()}>
+                    #{tag.tag_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="group relative z-10">
+              <button
+                type="button"
+                className="flex h-6 w-6 items-center justify-center rounded-full text-primary transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                aria-label="查看投稿格式标签说明"
+                aria-describedby="content-tag-help"
+              >
+                <CircleHelp className="h-4 w-4" />
+              </button>
+              <div
+                id="content-tag-help"
+                role="tooltip"
+                className="pointer-events-none invisible absolute right-0 top-full mt-2 w-72 rounded-lg border-2 border-dashed border-[var(--fabric-stitch)] bg-card p-3 text-left text-xs leading-5 text-foreground opacity-0 shadow-lg transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+              >
+                <p className="mb-1 font-semibold text-primary">投稿格式标签</p>
+                <p><code>[hide]内容[/hide]</code> 隐藏内容</p>
+                <p><code>[bold]内容[/bold]</code> 加粗文字</p>
+                <p><code>[big=1]内容[/big]</code> 逐字放大缩小</p>
+                <p><code>[shake=1]内容[/shake]</code> 逐字晃动</p>
+                <p className="mt-1 text-muted-foreground">
+                  动态效果强度为 0.1～3；支持嵌套，也兼容 {'{{内容}}'}。
+                </p>
+              </div>
+            </div>
+          </div>
           {selectedTag && (
             <pre className="text-primary text-sm mt-2 whitespace-pre-wrap">
               {tags.find((t) => t.id === parseInt(selectedTag))?.description}

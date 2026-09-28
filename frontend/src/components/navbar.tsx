@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LogOut, UserRound } from 'lucide-react';
+import { Github, LogOut, UserRound } from 'lucide-react';
 import { useAccountAuth } from '@/lib/account-auth';
 
 const NAV_ROUTES = [
@@ -56,6 +56,16 @@ export function Navbar() {
         ) : (
           <button type="button" disabled={loading} onClick={() => openAccountDialog('login')} className="flex h-9 shrink-0 items-center gap-1.5 rounded px-2 text-sm text-primary-foreground hover:bg-white/10 disabled:opacity-60 sm:px-3" title="登录 / 注册"><UserRound className="h-4 w-4" /><span className="hidden whitespace-nowrap sm:inline">登录 / 注册</span></button>
         )}
+        <a
+          href="https://github.com/Xinrea/JoiAsk"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded text-primary-foreground transition-colors hover:bg-white/10"
+          title="在 GitHub 上查看 JoiAsk"
+          aria-label="在 GitHub 上查看 JoiAsk"
+        >
+          <Github className="h-5 w-5" />
+        </a>
       </div>
     </div>
   );

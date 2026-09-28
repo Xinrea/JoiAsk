@@ -1,6 +1,7 @@
 {
   "name": "joiask",
   "version": "1.0.0",
+  "type": "module",
   "description": "JoiAsk Question Box",
   "scripts": {
     "dev:frontend": "cd frontend && npm run dev",
@@ -8,7 +9,8 @@
     "dev:backend": "go run cmd/cmd.go",
     "build:frontend": "cd frontend && npm run build",
     "build:admin": "cd admin && npm run build",
-    "build": "npm run build:frontend && npm run build:admin"
+    "build": "npm run build:frontend && npm run build:admin",
+    "test:content-markup": "node --test shared/content-markup.test.mts"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

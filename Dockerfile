@@ -1,15 +1,17 @@
 FROM node:22 AS frontend-builder
-WORKDIR /frontend
+WORKDIR /workspace/frontend
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend .
+COPY shared /workspace/shared
 RUN npm run build
 
 FROM node:22 AS admin-builder
-WORKDIR /admin
+WORKDIR /workspace/admin
 COPY admin/package*.json ./
 RUN npm ci
 COPY admin .
+COPY shared /workspace/shared
 RUN npm run build
 
 FROM golang:1.25-alpine AS backend-builder
@@ -23,8 +25,8 @@ RUN CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o /jask ./cmd/cmd.go
 
 FROM caddy:2-alpine
 WORKDIR /work
-COPY --from=frontend-builder /frontend/out ./frontend
-COPY --from=admin-builder /admin/out ./admin
+COPY --from=frontend-builder /workspace/frontend/out ./frontend
+COPY --from=admin-builder /workspace/admin/out ./admin
 COPY --from=backend-builder /jask ./
 COPY Caddyfile /etc/caddy/Caddyfile
 ENV GIN_MODE=release

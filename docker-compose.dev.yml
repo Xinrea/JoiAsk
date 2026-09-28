@@ -7,9 +7,10 @@ services:
     environment:
       WATCHPACK_POLLING: "true"
     volumes:
-      - ./frontend:/app
-      - frontend-node-modules:/app/node_modules
-      - frontend-next-cache:/app/.next
+      - ./frontend:/workspace/frontend
+      - ./shared:/workspace/shared:ro
+      - frontend-node-modules:/workspace/frontend/node_modules
+      - frontend-next-cache:/workspace/frontend/.next
 
   admin:
     build:
@@ -19,9 +20,10 @@ services:
     environment:
       WATCHPACK_POLLING: "true"
     volumes:
-      - ./admin:/app
-      - admin-node-modules:/app/node_modules
-      - admin-next-cache:/app/.next
+      - ./admin:/workspace/admin
+      - ./shared:/workspace/shared:ro
+      - admin-node-modules:/workspace/admin/node_modules
+      - admin-next-cache:/workspace/admin/.next
 
   backend:
     build:

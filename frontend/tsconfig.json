@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@joiask/content-markup": ["../shared/content-markup.ts"]
     }
   },
   "include": [

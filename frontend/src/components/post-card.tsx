@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Question, updateQuestion, EmojiData } from '@/lib/api';
 import { EmojiPicker } from './emoji-picker';
 import { ImagePreview } from './image-preview';
+import { FormattedContent } from './formatted-content';
 
 interface RemoteCursor {
   clientId: string;
@@ -22,52 +23,6 @@ interface PostCardProps {
   remoteCursors?: RemoteCursor[];
   onCursorMove?: (x: number, y: number) => void;
   onCursorLeave?: () => void;
-}
-
-const EMOJI_MAP: Record<string, string> = {
-  '[轴伊Joi收藏集动态表情包_跑了]': '/joi-emojis/paole.webp',
-  '[轴伊Joi收藏集动态表情包_鞠躬]': '/joi-emojis/jugong.webp',
-  '[轴伊Joi收藏集动态表情包_摇你]': '/joi-emojis/yaoni.webp',
-  '[轴伊Joi收藏集动态表情包_愤怒]': '/joi-emojis/fennu.webp',
-  '[轴伊Joi收藏集动态表情包_猴]': '/joi-emojis/hou.webp',
-  '[轴伊Joi收藏集动态表情包_NO]': '/joi-emojis/no.webp',
-  '[轴伊Joi收藏集动态表情包_贴贴]': '/joi-emojis/tietie.webp',
-  '[轴伊Joi收藏集动态表情包_呆]': '/joi-emojis/dai.webp',
-  '[轴伊Joi收藏集动态表情包_唔唔]': '/joi-emojis/wuwu.webp',
-  '[轴伊Joi收藏集动态表情包_啊这]': '/joi-emojis/azhe.webp',
-  '[轴伊Joi收藏集动态表情包_失落]': '/joi-emojis/shiluo.webp',
-  '[轴伊Joi收藏集动态表情包_神气]': '/joi-emojis/shenqi.webp',
-  '[轴伊Joi收藏集动态表情包_怎么这样]': '/joi-emojis/zenmezhyang.webp',
-  '[轴伊Joi收藏集动态表情包_睡觉]': '/joi-emojis/shuijiao.webp',
-  '[轴伊Joi收藏集动态表情包_爆]': '/joi-emojis/bao.webp',
-};
-
-function renderContent(content: string): string {
-  let rendered = content.replace(/｛/g, '{').replace(/｝/g, '}');
-  rendered = rendered.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  rendered = rendered.replace(
-    /\{\{([\s\S]*?)\}\}/g,
-    '<span style="color:#5a4e3f;background:#5a4e3f;transition:all 260ms ease;border-radius:2px;" onmouseover="this.style.color=\'#faf7f2\'" onmouseout="this.style.color=\'#5a4e3f\'">$1</span>'
-  );
-  // Replace URLs with links
-  rendered = rendered.replace(
-    /https?:\/\/[^\s<\[]+/g,
-    (match) => `<a href="${match}" target="_blank" rel="noopener noreferrer" style="color:#00a1d6;text-decoration:underline;">${match}</a>`
-  );
-  // Replace BV codes with bilibili links (only if not already linked)
-  rendered = rendered.replace(
-    /(?<!href="[^"]*?)(?<!">)BV[a-zA-Z0-9]{10}(?![^<]*<\/a>)/g,
-    (match) => `<a href="https://www.bilibili.com/video/${match}" target="_blank" rel="noopener noreferrer" style="color:#00a1d6;text-decoration:underline;">${match}</a>`
-  );
-  // Replace emoji tags with images
-  for (const [tag, url] of Object.entries(EMOJI_MAP)) {
-    const escapedTag = tag.replace(/[[\]]/g, '\\$&');
-    rendered = rendered.replace(
-      new RegExp(escapedTag, 'g'),
-      `<img src="${url}" alt="${tag}" style="display:inline-block;height:64px;width:64px;vertical-align:middle;margin:0 2px;object-fit:contain;" />`
-    );
-  }
-  return rendered;
 }
 
 function formatTime(dateString: string): string {
@@ -342,7 +297,7 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
                     </div>
                   </div>
                 )}
-                <span dangerouslySetInnerHTML={{ __html: renderContent(data.content) }} />
+                <FormattedContent content={data.content} />
                 {isArchived && (
                   <div
                     className="watermark archived pointer-events-none"
