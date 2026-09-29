@@ -81,6 +81,24 @@ func TestInitializeDBFromPreviousSchema(t *testing.T) {
 	if config.SpamPrompt != deepseek.DefaultSpamPrompt {
 		t.Fatalf("unexpected default spam prompt: %q", config.SpamPrompt)
 	}
+
+	var emojiCount int64
+	if err := DB.Model(&Emoji{}).Count(&emojiCount).Error; err != nil {
+		t.Fatal(err)
+	}
+	if emojiCount != int64(len(DefaultEmojis)) {
+		t.Fatalf("expected %d default emojis, got %d", len(DefaultEmojis), emojiCount)
+	}
+	if err := DB.Where("tag = ?", DefaultEmojis[0].Tag).Delete(&Emoji{}).Error; err != nil {
+		t.Fatal(err)
+	}
+	initializeDB()
+	if err := DB.Model(&Emoji{}).Count(&emojiCount).Error; err != nil {
+		t.Fatal(err)
+	}
+	if emojiCount != int64(len(DefaultEmojis)-1) {
+		t.Fatalf("expected deleted default emoji to stay deleted, got %d records", emojiCount)
+	}
 }
 
 func TestQuestionBilibiliUIDIsNotAForeignKey(t *testing.T) {

@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/navbar";
 import { AccountAuthProvider } from "@/lib/account-auth";
 import { getSiteConfig } from "@/lib/site-config";
+import { EmojiCatalogProvider } from "@/lib/emoji-catalog";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,9 +42,11 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased fabric-linen`}
       >
         <AccountAuthProvider>
-          <Navbar logoUrl={config.logo_url} />
-          {children}
-          <style id="custom-site-css">{config.custom_css}</style>
+          <EmojiCatalogProvider>
+            <Navbar logoUrl={config.logo_url} />
+            {children}
+            <style id="custom-site-css">{config.custom_css}</style>
+          </EmojiCatalogProvider>
         </AccountAuthProvider>
       </body>
     </html>

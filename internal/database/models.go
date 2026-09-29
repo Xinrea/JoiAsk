@@ -17,6 +17,12 @@ type Tag struct {
 	Description string `json:"description"`
 }
 
+type Emoji struct {
+	BaseModel
+	Tag string `gorm:"size:255;uniqueIndex;not null" json:"tag"`
+	URL string `gorm:"size:1024;not null" json:"url"`
+}
+
 type Question struct {
 	BaseModel
 	BilibiliUID    *int64 `gorm:"index" json:"-"`
@@ -120,6 +126,7 @@ type Config struct {
 	LogoURL                   string `gorm:"size:1024" json:"logo_url"`
 	FaviconURL                string `gorm:"size:1024" json:"favicon_url"`
 	CustomCSS                 string `gorm:"type:text" json:"custom_css"`
+	EmojisInitialized         bool   `gorm:"not null;default:false" json:"-"`
 	Announcement              string `json:"announcement"`
 	RequireVerifiedUserToPost bool   `gorm:"not null;default:false" json:"require_verified_user_to_post"`
 	DeepSeekAPIKey            string `json:"-"`

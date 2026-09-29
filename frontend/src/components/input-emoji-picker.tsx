@@ -1,24 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-
-const INPUT_EMOJIS = [
-  { name: '跑了', tag: '[轴伊Joi收藏集动态表情包_跑了]', url: '/joi-emojis/paole.webp' },
-  { name: '鞠躬', tag: '[轴伊Joi收藏集动态表情包_鞠躬]', url: '/joi-emojis/jugong.webp' },
-  { name: '摇你', tag: '[轴伊Joi收藏集动态表情包_摇你]', url: '/joi-emojis/yaoni.webp' },
-  { name: '愤怒', tag: '[轴伊Joi收藏集动态表情包_愤怒]', url: '/joi-emojis/fennu.webp' },
-  { name: '猴', tag: '[轴伊Joi收藏集动态表情包_猴]', url: '/joi-emojis/hou.webp' },
-  { name: 'NO', tag: '[轴伊Joi收藏集动态表情包_NO]', url: '/joi-emojis/no.webp' },
-  { name: '贴贴', tag: '[轴伊Joi收藏集动态表情包_贴贴]', url: '/joi-emojis/tietie.webp' },
-  { name: '呆', tag: '[轴伊Joi收藏集动态表情包_呆]', url: '/joi-emojis/dai.webp' },
-  { name: '唔唔', tag: '[轴伊Joi收藏集动态表情包_唔唔]', url: '/joi-emojis/wuwu.webp' },
-  { name: '啊这', tag: '[轴伊Joi收藏集动态表情包_啊这]', url: '/joi-emojis/azhe.webp' },
-  { name: '失落', tag: '[轴伊Joi收藏集动态表情包_失落]', url: '/joi-emojis/shiluo.webp' },
-  { name: '神气', tag: '[轴伊Joi收藏集动态表情包_神气]', url: '/joi-emojis/shenqi.webp' },
-  { name: '怎么这样', tag: '[轴伊Joi收藏集动态表情包_怎么这样]', url: '/joi-emojis/zenmezhyang.webp' },
-  { name: '睡觉', tag: '[轴伊Joi收藏集动态表情包_睡觉]', url: '/joi-emojis/shuijiao.webp' },
-  { name: '爆', tag: '[轴伊Joi收藏集动态表情包_爆]', url: '/joi-emojis/bao.webp' },
-];
+import { useEmojiCatalog } from '@/lib/emoji-catalog';
 
 interface InputEmojiPickerProps {
   onSelect: (tag: string) => void;
@@ -26,6 +9,7 @@ interface InputEmojiPickerProps {
 
 export function InputEmojiPicker({ onSelect }: InputEmojiPickerProps) {
   const [panelOpen, setPanelOpen] = useState(false);
+  const { emojis: inputEmojis, loading, error, refresh } = useEmojiCatalog();
   const pickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,7 +34,10 @@ export function InputEmojiPicker({ onSelect }: InputEmojiPickerProps) {
     <div ref={pickerRef} className="relative inline-block">
       <button
         type="button"
-        onClick={() => setPanelOpen(!panelOpen)}
+        onClick={() => {
+          if (!panelOpen) void refresh();
+          setPanelOpen(!panelOpen);
+        }}
         className="p-2 text-primary hover:bg-accent rounded transition-all duration-200 border-2 border-dashed border-[var(--color-fabric-stitch)]"
         title="插入表情"
       >
@@ -62,16 +49,20 @@ export function InputEmojiPicker({ onSelect }: InputEmojiPickerProps) {
         </svg>
       </button>
       {panelOpen && (
-        <div className="absolute bottom-full mb-2 right-0 w-[280px] z-[999] bg-card p-2 rounded border-2 border-dashed border-[var(--color-fabric-stitch)] grid grid-cols-5 gap-1 shadow-lg">
-          {INPUT_EMOJIS.map(({ name, tag, url }) => (
-            <div
+        <div className="absolute bottom-full mb-2 right-0 w-[280px] max-h-72 overflow-y-auto z-[999] bg-card p-2 rounded border-2 border-dashed border-[var(--color-fabric-stitch)] grid grid-cols-5 gap-1 shadow-lg">
+          {loading && <p className="col-span-5 text-sm">加载中...</p>}
+          {error && <button type="button" className="col-span-5 text-sm" onClick={() => void refresh()}>{error}</button>}
+          {!loading && !error && inputEmojis.length === 0 && <p className="col-span-5 text-sm">暂无表情包</p>}
+          {inputEmojis.map(({ tag, url }) => (
+            <button
+              type="button"
               key={tag}
               className="flex flex-col items-center justify-center cursor-pointer p-1 rounded hover:bg-accent transition-all duration-200"
               onClick={() => handleSelect(tag)}
-              title={name}
+              title={tag}
             >
-              <img src={url} alt={name} className="w-10 h-10 object-contain" />
-            </div>
+              <img src={url} alt={tag} className="w-10 h-10 object-contain" />
+            </button>
           ))}
         </div>
       )}

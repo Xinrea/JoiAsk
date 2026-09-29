@@ -17,6 +17,7 @@ import {
   type ContentEffectName,
   type ContentNode,
 } from '@joiask/content-markup';
+import { useEmojiCatalog } from '@/lib/emoji-catalog';
 
 interface FormattedContentProps {
   content: string;
@@ -270,7 +271,8 @@ export const FormattedContent = memo(function FormattedContent({
   content,
 }: FormattedContentProps) {
   const containerRef = useRef<HTMLSpanElement>(null);
-  const nodes = useMemo(() => parseContentMarkup(content), [content]);
+  const { emojiMap } = useEmojiCatalog();
+  const nodes = useMemo(() => parseContentMarkup(content, emojiMap), [content, emojiMap]);
 
   useEffect(() => {
     const container = containerRef.current;

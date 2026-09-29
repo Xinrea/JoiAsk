@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -270,6 +271,20 @@ export default function CustomPage() {
               恢复默认
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>表情包</CardTitle>
+          <CardDescription>
+            管理前台提问时可以插入的表情包。每条记录包含一个标签和一张图片。
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline">
+            <Link href="/dashboard/custom/emojis">进入表情包管理</Link>
+          </Button>
         </CardContent>
       </Card>
     </div>

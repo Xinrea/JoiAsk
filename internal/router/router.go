@@ -47,6 +47,7 @@ func Run() {
 	questionController := controller.NewQuestionController()
 	configController := new(controller.ConfigController)
 	statisticsController := new(controller.StatisticsController)
+	emojiController := new(controller.EmojiController)
 	accountController := new(controller.AccountController)
 	bilibiliClient := bilibili.NewClient()
 	memberController := &controller.MemberController{Client: bilibiliClient, AvatarStorage: avatar.NewStore()}
@@ -98,6 +99,13 @@ func Run() {
 			api.PUT("/tag/:id", authMiddleware, tagController.Put)
 			api.DELETE("/tag/:id", authMiddleware, tagController.Delete)
 			api.POST("/tag", authMiddleware, tagController.Post)
+		}
+		// Emoji
+		{
+			api.GET("/emoji", emojiController.Get)
+			api.POST("/emoji", authMiddleware, emojiController.Post)
+			api.PUT("/emoji/:id", authMiddleware, emojiController.Put)
+			api.DELETE("/emoji/:id", authMiddleware, emojiController.Delete)
 		}
 		// Question
 		{

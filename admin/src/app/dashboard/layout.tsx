@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
 import { useAuth } from "@/lib/auth";
+import { EmojiCatalogProvider } from "@/lib/emoji-catalog";
 
 export default function DashboardLayout({
   children,
@@ -32,13 +33,15 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen min-h-0">
-      <Sidebar />
-      <main className="flex-1 min-w-0 overflow-auto bg-background">
-        <div className="mx-auto max-w-6xl px-6 py-8 sm:px-8 lg:px-10">
-          {children}
-        </div>
-      </main>
-    </div>
+    <EmojiCatalogProvider>
+      <div className="flex h-screen min-h-0">
+        <Sidebar />
+        <main className="flex-1 min-w-0 overflow-auto bg-background">
+          <div className="mx-auto max-w-6xl px-6 py-8 sm:px-8 lg:px-10">
+            {children}
+          </div>
+        </main>
+      </div>
+    </EmojiCatalogProvider>
   );
 }

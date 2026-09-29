@@ -11,6 +11,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var DB *gorm.DB
@@ -20,6 +21,24 @@ const DefaultSiteName = "JoiAsk 提问箱"
 const DefaultSiteDescription = "JoiAsk 提问箱"
 const DefaultLogoURL = "/favicon.png"
 const DefaultFaviconURL = "/favicon.png"
+
+var DefaultEmojis = []Emoji{
+	{Tag: "[轴伊Joi收藏集动态表情包_跑了]", URL: "/joi-emojis/paole.webp"},
+	{Tag: "[轴伊Joi收藏集动态表情包_鞠躬]", URL: "/joi-emojis/jugong.webp"},
+	{Tag: "[轴伊Joi收藏集动态表情包_摇你]", URL: "/joi-emojis/yaoni.webp"},
+	{Tag: "[轴伊Joi收藏集动态表情包_愤怒]", URL: "/joi-emojis/fennu.webp"},
+	{Tag: "[轴伊Joi收藏集动态表情包_猴]", URL: "/joi-emojis/hou.webp"},
+	{Tag: "[轴伊Joi收藏集动态表情包_NO]", URL: "/joi-emojis/no.webp"},
+	{Tag: "[轴伊Joi收藏集动态表情包_贴贴]", URL: "/joi-emojis/tietie.webp"},
+	{Tag: "[轴伊Joi收藏集动态表情包_呆]", URL: "/joi-emojis/dai.webp"},
+	{Tag: "[轴伊Joi收藏集动态表情包_唔唔]", URL: "/joi-emojis/wuwu.webp"},
+	{Tag: "[轴伊Joi收藏集动态表情包_啊这]", URL: "/joi-emojis/azhe.webp"},
+	{Tag: "[轴伊Joi收藏集动态表情包_失落]", URL: "/joi-emojis/shiluo.webp"},
+	{Tag: "[轴伊Joi收藏集动态表情包_神气]", URL: "/joi-emojis/shenqi.webp"},
+	{Tag: "[轴伊Joi收藏集动态表情包_怎么这样]", URL: "/joi-emojis/zenmezhyang.webp"},
+	{Tag: "[轴伊Joi收藏集动态表情包_睡觉]", URL: "/joi-emojis/shuijiao.webp"},
+	{Tag: "[轴伊Joi收藏集动态表情包_爆]", URL: "/joi-emojis/bao.webp"},
+}
 
 // Init opens connection and try to initialize the database.
 func Init() {
@@ -50,6 +69,7 @@ func initializeDB() {
 		&Admin{},
 		&Config{},
 		&Tag{},
+		&Emoji{},
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -105,4 +125,27 @@ func initializeDB() {
 			log.Fatal("Failed to initialize default tag.", err)
 		}
 	}
+	if err := initializeEmojis(DB); err != nil {
+		log.Fatal("Failed to initialize default emojis.", err)
+	}
+}
+
+// Seed once, atomically with the marker, so edits/deletions (even deleting all
+// entries) survive restarts and an interrupted initialization can be retried.
+func initializeEmojis(db *gorm.DB) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		var config Config
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&config).Error; err != nil {
+			return err
+		}
+		if config.EmojisInitialized {
+			return nil
+		}
+		for _, emoji := range DefaultEmojis {
+			if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&emoji).Error; err != nil {
+				return err
+			}
+		}
+		return tx.Model(&config).Update("emojis_initialized", true).Error
+	})
 }

@@ -48,6 +48,14 @@ export interface Config {
   require_verified_user_to_post: boolean;
 }
 
+export interface InputEmoji {
+  id: number;
+  tag: string;
+  url: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Settings {
   deepseek_api_key: string;
   spam_prompt: string;
@@ -159,6 +167,45 @@ export async function uploadConfigAsset(file: File): Promise<ApiResponse<{ url: 
     method: "POST",
     credentials: "include",
     body: formData,
+  });
+  return res.json();
+}
+
+export async function getInputEmojis(): Promise<ApiResponse<InputEmoji[]>> {
+  const res = await fetch(`${API_BASE}/emoji`, {
+    method: "GET",
+    credentials: "include",
+  });
+  return res.json();
+}
+
+export async function createInputEmoji(data: { tag: string; url: string }): Promise<ApiResponse<InputEmoji>> {
+  const res = await fetch(`${API_BASE}/emoji`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+export async function updateInputEmoji(
+  id: number,
+  data: { tag: string; url: string },
+): Promise<ApiResponse<InputEmoji>> {
+  const res = await fetch(`${API_BASE}/emoji/${id}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+export async function deleteInputEmoji(id: number): Promise<ApiResponse<null>> {
+  const res = await fetch(`${API_BASE}/emoji/${id}`, {
+    method: "DELETE",
+    credentials: "include",
   });
   return res.json();
 }

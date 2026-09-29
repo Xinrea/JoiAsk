@@ -14,6 +14,12 @@ export interface EmojiData {
   count: number;
 }
 
+export interface InputEmoji {
+  id: number;
+  tag: string;
+  url: string;
+}
+
 export interface Question {
   id: number;
   tag_id: number;
@@ -91,6 +97,14 @@ export async function getInfo(): Promise<ApiResponse<{ id: number; username: str
 
 export async function getConfig(): Promise<ApiResponse<Config>> {
   const res = await fetch(`${API_BASE}/config`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  return res.json();
+}
+
+export async function getInputEmojis(): Promise<ApiResponse<InputEmoji[]>> {
+  const res = await fetch(`${API_BASE}/emoji`, {
     method: 'GET',
     credentials: 'include',
   });

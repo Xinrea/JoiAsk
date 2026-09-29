@@ -2,7 +2,9 @@ export const MIN_EFFECT_STRENGTH = 0.1;
 export const MAX_EFFECT_STRENGTH = 3;
 export const DEFAULT_EFFECT_STRENGTH = 1;
 
-export const CONTENT_EMOJI_MAP: Record<string, string> = {
+export type ContentEmojiMap = Readonly<Record<string, string>>;
+
+export const CONTENT_EMOJI_MAP: ContentEmojiMap = {
   '[轴伊Joi收藏集动态表情包_跑了]': '/joi-emojis/paole.webp',
   '[轴伊Joi收藏集动态表情包_鞠躬]': '/joi-emojis/jugong.webp',
   '[轴伊Joi收藏集动态表情包_摇你]': '/joi-emojis/yaoni.webp',
@@ -64,8 +66,11 @@ function appendNode(nodes: ContentNode[], node: ContentNode) {
   nodes.push(node);
 }
 
-function tokenizeText(value: string): ContentNode[] {
+function tokenizeText(value: string, emojiMap: ContentEmojiMap): ContentNode[] {
   const nodes: ContentNode[] = [];
+  const emojiEntries = Object.entries(emojiMap).sort(
+    (a, b) => b[0].length - a[0].length
+  );
   let cursor = 0;
 
   while (cursor < value.length) {
@@ -104,7 +109,9 @@ function tokenizeText(value: string): ContentNode[] {
       };
     }
 
-    for (const [label, src] of Object.entries(CONTENT_EMOJI_MAP)) {
+    // Prefer the longest tag when custom tags share a prefix.
+    for (const [label, src] of emojiEntries) {
+      if (!label || !src) continue;
       const index = remaining.indexOf(label);
       if (
         index !== -1 &&
@@ -137,13 +144,13 @@ function tokenizeText(value: string): ContentNode[] {
   return nodes;
 }
 
-function tokenizeTextNodes(nodes: ContentNode[]): ContentNode[] {
+function tokenizeTextNodes(nodes: ContentNode[], emojiMap: ContentEmojiMap): ContentNode[] {
   return nodes.flatMap((node) => {
-    if (node.type === 'text') return tokenizeText(node.value);
+    if (node.type === 'text') return tokenizeText(node.value, emojiMap);
     if (node.type !== 'effect') return node;
     return {
       ...node,
-      children: tokenizeTextNodes(node.children),
+      children: tokenizeTextNodes(node.children, emojiMap),
     };
   });
 }
@@ -206,7 +213,10 @@ function parseEffectOpening(
   };
 }
 
-export function parseContentMarkup(content: string): ContentNode[] {
+export function parseContentMarkup(
+  content: string,
+  emojiMap: ContentEmojiMap = CONTENT_EMOJI_MAP
+): ContentNode[] {
   const source = content.replace(/｛/g, '{').replace(/｝/g, '}');
   const root: ContentNode[] = [];
   const stack: EffectFrame[] = [];
@@ -291,5 +301,5 @@ export function parseContentMarkup(content: string): ContentNode[] {
     });
   }
 
-  return tokenizeTextNodes(root);
+  return tokenizeTextNodes(root, emojiMap);
 }
