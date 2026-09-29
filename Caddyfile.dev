@@ -9,7 +9,12 @@
 	}
 
 	handle /api/* {
-		reverse_proxy {$BACKEND_UPSTREAM:127.0.0.1:8080}
+		reverse_proxy {$BACKEND_UPSTREAM:127.0.0.1:8080} {
+			# The backend uses the client IP for emoji rate limiting. Trust
+			# the local/container network so Caddy keeps the original IP
+			# forwarded by an outer proxy.
+			trusted_proxies private_ranges
+		}
 	}
 
 	handle_path /upload-img/* {

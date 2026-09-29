@@ -9,7 +9,12 @@
 	}
 
 	handle /api/* {
-		reverse_proxy 127.0.0.1:8080
+		reverse_proxy 127.0.0.1:8080 {
+			# Preserve the address supplied by an outer reverse proxy (for
+			# example, the Nginx setup documented in README.md). Caddy
+			# otherwise replaces X-Forwarded-For with the proxy's address.
+			trusted_proxies private_ranges
+		}
 	}
 
 	redir /admin /admin/
