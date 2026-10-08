@@ -11,10 +11,12 @@ import {
   loginAccount,
   registerAccount,
   startAccountVerification,
+  requestPasswordReset,
 } from "@/lib/api";
 
 interface AccountDialogProps {
   open: boolean;
+  emailEnabled: boolean;
   initialMode: "login" | "register";
   onClose: () => void;
   onAuthenticated: (user: AccountUser) => void;
@@ -22,11 +24,16 @@ interface AccountDialogProps {
 
 export function AccountDialog({
   open,
+  emailEnabled,
   initialMode,
   onClose,
   onAuthenticated,
 }: AccountDialogProps) {
-  const [mode, setMode] = useState<"login" | "register">(initialMode);
+  const [mode, setMode] = useState<"login" | "register" | "forgot">(
+    initialMode,
+  );
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
   const [username, setUsername] = useState("");
   const [loginUsername, setLoginUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -48,6 +55,8 @@ export function AccountDialog({
       setVerification(null);
       setRemaining(0);
       setError("");
+      setMessage("");
+      setEmail("");
     }
   }, [open, initialMode]);
 
@@ -150,8 +159,25 @@ export function AccountDialog({
     }
   };
 
+  const handleForgot = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await requestPasswordReset(email);
+      if (response.code === 200) setMessage(response.data.message);
+      else setError(response.message || "请求失败");
+    } catch {
+      setError("请求失败，请检查网络连接");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const resetRegister = () => {
     setVerification(null);
+    setMessage("");
     setPassword("");
     setConfirmPassword("");
     setError("");
@@ -181,6 +207,7 @@ export function AccountDialog({
               className={`rounded px-4 py-1.5 text-sm ${mode === "register" ? "bg-card shadow-sm" : "text-muted-foreground"}`}
               onClick={() => {
                 setMode("register");
+                setMessage("");
                 setError("");
               }}
             >
@@ -197,11 +224,67 @@ export function AccountDialog({
           </button>
         </div>
 
-        {mode === "login" ? (
+        {mode === "forgot" && emailEnabled ? (
+          <form className="space-y-4" onSubmit={handleForgot}>
+            <div>
+              <label htmlFor="reset-email" className="mb-1.5 block text-sm">
+                已绑定的邮箱
+              </label>
+              <Input
+                id="reset-email"
+                type="email"
+                autoComplete="email"
+                maxLength={254}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              输入账号已绑定的邮箱，我们会向该邮箱发送重新设置密码的链接。
+            </p>
+            {error && (
+              <p role="alert" className="text-sm text-destructive">
+                {error}
+              </p>
+            )}
+            {message && (
+              <p role="status" className="text-sm text-primary">
+                {message}
+              </p>
+            )}
+            <Button className="w-full" type="submit" disabled={busy}>
+              {busy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "发送重置密码邮件"
+              )}
+            </Button>
+            <button
+              type="button"
+              className="text-sm text-primary hover:underline"
+              disabled={busy}
+              onClick={() => {
+                setMode("login");
+                resetRegister();
+              }}
+            >
+              返回登录
+            </button>
+          </form>
+        ) : mode === "login" || mode === "forgot" ? (
           <form className="space-y-4" onSubmit={handleLogin}>
             <div>
-              <label className="mb-1.5 block text-sm">登录名</label>
+              <label
+                htmlFor="login-identifier"
+                className="mb-1.5 block text-sm"
+              >
+                登录名或邮箱
+              </label>
               <Input
+                id="login-identifier"
+                placeholder="请输入登录名或已绑定邮箱"
+                maxLength={254}
                 value={loginUsername}
                 onChange={(e) => setLoginUsername(e.target.value)}
                 autoComplete="username"
@@ -221,6 +304,21 @@ export function AccountDialog({
             <Button className="w-full" type="submit" disabled={busy}>
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "登录"}
             </Button>
+            {emailEnabled && (
+              <button
+                type="button"
+                disabled={busy}
+                className="text-sm text-primary hover:underline"
+                onClick={() => {
+                  setMode("forgot");
+                  setError("");
+                  setMessage("");
+                  setPassword("");
+                }}
+              >
+                忘记密码？
+              </button>
+            )}
           </form>
         ) : !verification ? (
           <form className="space-y-4" onSubmit={startVerification}>

@@ -50,9 +50,11 @@ export interface Config {
   custom_css: string;
   announcement: string;
   require_verified_user_to_post: boolean;
+  email_enabled: boolean;
 }
 
 export interface AccountUser {
+  email: string | null;
   username: string;
   bilibili_uid: string;
   bilibili_name: string;
@@ -227,3 +229,19 @@ export async function getTags(): Promise<ApiResponse<Tag[]>> {
   });
   return res.json();
 }
+
+async function postAccountEmail<T>(path: string, data: Record<string, string>): Promise<ApiResponse<T>> {
+  const res = await fetch(`${API_BASE}/account/${path}`, {
+    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+export const requestEmailBinding = (email: string, password: string) =>
+  postAccountEmail<{ message: string }>('email', { email, password });
+export const confirmEmailBinding = (token: string) =>
+  postAccountEmail<AccountUser>('email/confirm', { token });
+export const requestPasswordReset = (email: string) =>
+  postAccountEmail<{ message: string }>('password-reset', { email });
+export const resetAccountPassword = (token: string, password: string) =>
+  postAccountEmail<{ message: string }>('password-reset/confirm', { token, password });

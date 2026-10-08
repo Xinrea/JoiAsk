@@ -56,7 +56,21 @@ export interface InputEmoji {
   updated_at: string;
 }
 
+export interface EmailSettings {
+  enabled: boolean;
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  password_configured: boolean;
+  security: 'starttls' | 'tls' | 'none';
+  from_email: string;
+  from_name: string;
+  site_url: string;
+}
+
 export interface Settings {
+  email: EmailSettings;
   deepseek_api_key: string;
   spam_prompt: string;
   require_verified_user_to_post: boolean;

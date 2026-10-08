@@ -99,6 +99,9 @@ func TestAccountVerificationRegistrationAndDisabledLogin(t *testing.T) {
 	if err := database.DB.Where("bilibili_uid = ?", 123456).First(&user).Error; err != nil {
 		t.Fatal(err)
 	}
+	if user.Email != nil {
+		t.Fatal("registration unexpectedly required or bound an email")
+	}
 	if user.BilibiliUID != 123456 {
 		t.Fatalf("unexpected user primary key: %d", user.BilibiliUID)
 	}

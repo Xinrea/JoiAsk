@@ -15,12 +15,29 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BilibiliVerificationSettings } from "@/components/bilibili-verification-settings";
-import { getSettings, updateSettings } from "@/lib/api";
+import { EmailSettings, getSettings, updateSettings } from "@/lib/api";
 
 export default function SettingsPage() {
+  const [email, setEmail] = useState<EmailSettings>({
+    enabled: false,
+    host: "",
+    port: 587,
+    username: "",
+    password: "",
+    password_configured: false,
+    security: "starttls",
+    from_email: "",
+    from_name: "",
+    site_url: "",
+  });
+  const updateEmail = <K extends keyof EmailSettings>(
+    key: K,
+    value: EmailSettings[K],
+  ) => setEmail((current) => ({ ...current, [key]: value }));
   const [deepSeekAPIKey, setDeepSeekAPIKey] = useState("");
   const [spamPrompt, setSpamPrompt] = useState("");
-  const [requireVerifiedUserToPost, setRequireVerifiedUserToPost] = useState(false);
+  const [requireVerifiedUserToPost, setRequireVerifiedUserToPost] =
+    useState(false);
   const [showAPIKey, setShowAPIKey] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -32,9 +49,12 @@ export default function SettingsPage() {
       try {
         const res = await getSettings();
         if (res.code === 200) {
+          if (res.data.email) setEmail(res.data.email);
           setDeepSeekAPIKey(res.data.deepseek_api_key || "");
           setSpamPrompt(res.data.spam_prompt || "");
-          setRequireVerifiedUserToPost(!!res.data.require_verified_user_to_post);
+          setRequireVerifiedUserToPost(
+            !!res.data.require_verified_user_to_post,
+          );
         } else {
           setMessage(res.message || "加载失败");
         }
@@ -59,11 +79,13 @@ export default function SettingsPage() {
     setIsSuccess(false);
     try {
       const res = await updateSettings({
+        email,
         deepseek_api_key: deepSeekAPIKey.trim(),
         spam_prompt: spamPrompt.trim(),
         require_verified_user_to_post: requireVerifiedUserToPost,
       });
       if (res.code === 200) {
+        if (res.data.email) setEmail(res.data.email);
         setDeepSeekAPIKey(res.data.deepseek_api_key || "");
         setSpamPrompt(res.data.spam_prompt || "");
         setRequireVerifiedUserToPost(!!res.data.require_verified_user_to_post);
@@ -93,14 +115,18 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>投稿权限</CardTitle>
-          <CardDescription>控制游客是否可以直接投稿，不影响登录和注册入口。</CardDescription>
+          <CardDescription>
+            控制游客是否可以直接投稿，不影响登录和注册入口。
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex max-w-2xl items-start gap-3">
             <Checkbox
               id="require-verified-user"
               checked={requireVerifiedUserToPost}
-              onCheckedChange={(checked) => setRequireVerifiedUserToPost(!!checked)}
+              onCheckedChange={(checked) =>
+                setRequireVerifiedUserToPost(!!checked)
+              }
               disabled={isLoading}
             />
             <div className="space-y-1">
@@ -114,6 +140,135 @@ export default function SettingsPage() {
       </Card>
 
       <BilibiliVerificationSettings />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>邮件服务（SMTP）</CardTitle>
+          <CardDescription>
+            开启后，已注册用户可以绑定邮箱，并通过邮件链接重置密码。注册流程保持不变。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="max-w-3xl space-y-5">
+          <div className="flex items-center gap-3">
+            <Checkbox
+              id="email-enabled"
+              checked={email.enabled}
+              onCheckedChange={(checked) => updateEmail("enabled", !!checked)}
+              disabled={isLoading || isSaving}
+            />
+            <Label htmlFor="email-enabled">开启邮件功能</Label>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="smtp-host">SMTP 主机</Label>
+              <Input
+                id="smtp-host"
+                value={email.host}
+                onChange={(e) => updateEmail("host", e.target.value)}
+                placeholder="smtp.example.com"
+                disabled={isLoading || isSaving}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="smtp-port">SMTP 端口</Label>
+              <Input
+                id="smtp-port"
+                type="number"
+                min={1}
+                max={65535}
+                value={email.port || ""}
+                onChange={(e) => updateEmail("port", Number(e.target.value))}
+                disabled={isLoading || isSaving}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="smtp-security">连接加密</Label>
+              <select
+                id="smtp-security"
+                value={email.security}
+                onChange={(e) =>
+                  updateEmail(
+                    "security",
+                    e.target.value as EmailSettings["security"],
+                  )
+                }
+                disabled={isLoading || isSaving}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="starttls">STARTTLS（通常为 587）</option>
+                <option value="tls">TLS / SSL（通常为 465）</option>
+                <option value="none">不加密（仅用于本地邮件中继）</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="smtp-username">SMTP 用户名</Label>
+              <Input
+                id="smtp-username"
+                value={email.username}
+                onChange={(e) => updateEmail("username", e.target.value)}
+                autoComplete="off"
+                placeholder="可留空以使用无需认证的中继"
+                disabled={isLoading || isSaving}
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="smtp-password">SMTP 密码 / 授权码</Label>
+              <Input
+                id="smtp-password"
+                type="password"
+                value={email.password}
+                onChange={(e) => updateEmail("password", e.target.value)}
+                autoComplete="new-password"
+                placeholder={
+                  email.password_configured
+                    ? "已配置，留空保留现有密码"
+                    : "请输入 SMTP 密码或授权码"
+                }
+                disabled={isLoading || isSaving}
+              />
+              <p className="text-xs text-muted-foreground">
+                密码保存在数据库中，接口不会返回已保存的密码。留空表示保留原值。
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="smtp-from-email">发件邮箱</Label>
+              <Input
+                id="smtp-from-email"
+                type="email"
+                value={email.from_email}
+                onChange={(e) => updateEmail("from_email", e.target.value)}
+                placeholder="noreply@example.com"
+                disabled={isLoading || isSaving}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="smtp-from-name">发件人名称</Label>
+              <Input
+                id="smtp-from-name"
+                value={email.from_name}
+                onChange={(e) => updateEmail("from_name", e.target.value)}
+                placeholder="JoiAsk 提问箱"
+                disabled={isLoading || isSaving}
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="email-site-url">网站公开地址</Label>
+              <Input
+                id="email-site-url"
+                type="url"
+                value={email.site_url}
+                onChange={(e) => updateEmail("site_url", e.target.value)}
+                placeholder="https://ask.example.com"
+                disabled={isLoading || isSaving}
+              />
+              <p className="text-xs text-muted-foreground">
+                填写用户访问前台的完整地址，用于生成邮件链接。链接有效期为 30
+                分钟。关闭邮件功能后，相关入口隐藏，已有邮件链接也暂不可用。
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -171,7 +326,6 @@ export default function SettingsPage() {
               审核逻辑、输入字段说明和 is_spam JSON 返回格式由系统自动补充。
             </p>
           </div>
-
         </CardContent>
       </Card>
 

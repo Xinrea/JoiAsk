@@ -78,6 +78,12 @@ func TestInitializeDBFromPreviousSchema(t *testing.T) {
 	if err := DB.First(&config).Error; err != nil {
 		t.Fatal(err)
 	}
+	if config.EmailEnabled {
+		t.Fatal("email must default to disabled after migration")
+	}
+	if !DB.Migrator().HasTable(&EmailToken{}) || !DB.Migrator().HasTable(&EmailRateLimit{}) {
+		t.Fatal("email tables were not migrated")
+	}
 	if config.SpamPrompt != deepseek.DefaultSpamPrompt {
 		t.Fatalf("unexpected default spam prompt: %q", config.SpamPrompt)
 	}
@@ -193,6 +199,48 @@ func TestQuestionOnlyExposesBilibiliIdentityForRealNamePosts(t *testing.T) {
 	for _, expected := range []string{`"bilibili_uid":"123456"`, `"bilibili_name":"测试用户"`, `"bilibili_avatar":"/upload-img/avatar.jpg"`} {
 		if !strings.Contains(string(realName), expected) {
 			t.Fatalf("real-name question missing %s: %s", expected, realName)
+		}
+	}
+}
+
+type userBeforeEmail struct {
+	BilibiliUID    int64     `gorm:"primaryKey;autoIncrement:false"`
+	Username       string    `gorm:"size:32;uniqueIndex;not null"`
+	PasswordHash   string    `gorm:"size:255;not null"`
+	BilibiliName   string    `gorm:"size:255;not null"`
+	BilibiliAvatar string    `gorm:"size:1024;not null"`
+	VerifiedAt     time.Time `gorm:"not null"`
+	IsDisabled     bool      `gorm:"index;not null;default:false"`
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+func (userBeforeEmail) TableName() string { return "users" }
+func TestEmailMigrationPreservesExistingUsers(t *testing.T) {
+	var err error
+	DB, err = gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "email-migration.db")), &gorm.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := DB.AutoMigrate(&userBeforeEmail{}); err != nil {
+		t.Fatal(err)
+	}
+	for i, name := range []string{"alice", "bob"} {
+		if err := DB.Create(&userBeforeEmail{BilibiliUID: int64(i + 1), Username: name, PasswordHash: "existing-hash", VerifiedAt: time.Now()}).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	initializeDB()
+	var users []User
+	if err := DB.Order("bilibili_uid").Find(&users).Error; err != nil {
+		t.Fatal(err)
+	}
+	if len(users) != 2 {
+		t.Fatal("migration lost existing users")
+	}
+	for _, user := range users {
+		if user.Email != nil || user.SessionVersion != 0 || user.PasswordHash != "existing-hash" {
+			t.Fatal("migration changed existing account credentials")
 		}
 	}
 }

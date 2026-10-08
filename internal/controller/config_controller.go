@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"joiask-backend/internal/database"
+	"joiask-backend/internal/mailer"
 	"joiask-backend/internal/storage"
 	"joiask-backend/pkg/util"
 	"net/http"
@@ -26,9 +27,10 @@ type ConfigRequest struct {
 }
 
 type SettingsRequest struct {
-	DeepSeekAPIKey            string `json:"deepseek_api_key"`
-	SpamPrompt                string `json:"spam_prompt"`
-	RequireVerifiedUserToPost bool   `json:"require_verified_user_to_post"`
+	Email                     *mailer.Settings `json:"email,omitempty"`
+	DeepSeekAPIKey            string           `json:"deepseek_api_key"`
+	SpamPrompt                string           `json:"spam_prompt"`
+	RequireVerifiedUserToPost bool             `json:"require_verified_user_to_post"`
 }
 
 type AssetResponse struct {
@@ -167,6 +169,7 @@ func (*ConfigController) GetSettings(c *gin.Context) {
 		return
 	}
 	Success(c, SettingsRequest{
+		Email:                     publicMailSettings(config),
 		DeepSeekAPIKey:            config.DeepSeekAPIKey,
 		SpamPrompt:                config.SpamPrompt,
 		RequireVerifiedUserToPost: config.RequireVerifiedUserToPost,
@@ -191,6 +194,28 @@ func (*ConfigController) PutSettings(c *gin.Context) {
 		Fail(c, 500, "内部错误")
 		return
 	}
+	if request.Email != nil {
+		mail := *request.Email
+		mail.Normalize()
+		if mail.Password == "" {
+			mail.Password = config.SMTPPassword
+		}
+		if mail.Enabled {
+			if err := mail.Validate(); err != nil {
+				Fail(c, 400, err.Error())
+				return
+			}
+		}
+		config.EmailEnabled = mail.Enabled
+		config.SMTPHost = mail.Host
+		config.SMTPPort = mail.Port
+		config.SMTPUsername = mail.Username
+		config.SMTPPassword = mail.Password
+		config.SMTPSecurity = mail.Security
+		config.SMTPFromEmail = mail.FromEmail
+		config.SMTPFromName = mail.FromName
+		config.EmailSiteURL = mail.SiteURL
+	}
 	config.DeepSeekAPIKey = request.DeepSeekAPIKey
 	config.SpamPrompt = request.SpamPrompt
 	config.RequireVerifiedUserToPost = request.RequireVerifiedUserToPost
@@ -200,8 +225,22 @@ func (*ConfigController) PutSettings(c *gin.Context) {
 		return
 	}
 	Success(c, SettingsRequest{
+		Email:                     publicMailSettings(config),
 		DeepSeekAPIKey:            config.DeepSeekAPIKey,
 		SpamPrompt:                config.SpamPrompt,
 		RequireVerifiedUserToPost: config.RequireVerifiedUserToPost,
 	})
+}
+
+func mailSettings(config database.Config) mailer.Settings {
+	settings := mailer.Settings{Enabled: config.EmailEnabled, Host: config.SMTPHost, Port: config.SMTPPort, Username: config.SMTPUsername, Password: config.SMTPPassword, Security: config.SMTPSecurity, FromEmail: config.SMTPFromEmail, FromName: config.SMTPFromName, SiteURL: config.EmailSiteURL}
+	settings.Normalize()
+	return settings
+}
+
+func publicMailSettings(config database.Config) *mailer.Settings {
+	settings := mailSettings(config)
+	settings.PasswordConfigured = settings.Password != ""
+	settings.Password = ""
+	return &settings
 }

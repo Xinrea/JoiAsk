@@ -66,6 +66,8 @@ func (q Question) MarshalJSON() ([]byte, error) {
 type User struct {
 	BilibiliUID    int64     `gorm:"primaryKey;autoIncrement:false" json:"bilibili_uid"`
 	Username       string    `gorm:"size:32;uniqueIndex;not null" json:"username"`
+	Email          *string   `gorm:"size:254;uniqueIndex" json:"-"`
+	SessionVersion int       `gorm:"not null;default:0" json:"-"`
 	PasswordHash   string    `gorm:"size:255;not null" json:"-"`
 	BilibiliName   string    `gorm:"size:255;not null" json:"bilibili_name"`
 	BilibiliAvatar string    `gorm:"size:1024;not null" json:"bilibili_avatar"`
@@ -106,6 +108,26 @@ type BilibiliVerificationRequest struct {
 	ConsumedAt        *time.Time `json:"consumed_at"`
 }
 
+// EmailToken stores only a digest of the one-time credential. Account snapshots
+// invalidate outstanding links after a password or bound email change.
+type EmailToken struct {
+	BaseModel
+	BilibiliUID    int64      `gorm:"index;not null" json:"-"`
+	Purpose        string     `gorm:"size:16;index;not null" json:"-"`
+	Email          string     `gorm:"size:254;not null" json:"-"`
+	PreviousEmail  string     `gorm:"size:254" json:"-"`
+	PasswordHash   string     `gorm:"size:255;not null" json:"-"`
+	CredentialHash string     `gorm:"size:64;uniqueIndex;not null" json:"-"`
+	ExpiresAt      time.Time  `gorm:"index;not null" json:"-"`
+	ConsumedAt     *time.Time `json:"-"`
+}
+
+type EmailRateLimit struct {
+	Key         string `gorm:"size:64;primaryKey"`
+	WindowStart time.Time
+	Count       int
+}
+
 type LikeRecord struct {
 	BaseModel
 	IP         string   `gorm:"uniqueIndex:idx_like_records_ip_question" json:"ip"`
@@ -129,6 +151,15 @@ type Config struct {
 	EmojisInitialized         bool   `gorm:"not null;default:false" json:"-"`
 	Announcement              string `json:"announcement"`
 	RequireVerifiedUserToPost bool   `gorm:"not null;default:false" json:"require_verified_user_to_post"`
+	EmailEnabled              bool   `gorm:"not null;default:false" json:"email_enabled"`
+	SMTPHost                  string `gorm:"size:255" json:"-"`
+	SMTPPort                  int    `json:"-"`
+	SMTPUsername              string `gorm:"size:255" json:"-"`
+	SMTPPassword              string `json:"-"`
+	SMTPSecurity              string `gorm:"size:16" json:"-"`
+	SMTPFromEmail             string `gorm:"size:254" json:"-"`
+	SMTPFromName              string `gorm:"size:255" json:"-"`
+	EmailSiteURL              string `gorm:"size:1024" json:"-"`
 	DeepSeekAPIKey            string `json:"-"`
 	SpamPrompt                string `gorm:"type:text" json:"-"`
 }

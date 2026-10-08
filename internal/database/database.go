@@ -62,6 +62,8 @@ func Init() {
 func initializeDB() {
 	err := DB.AutoMigrate(
 		&User{},
+		&EmailToken{},
+		&EmailRateLimit{},
 		&BilibiliVerificationAccount{},
 		&BilibiliVerificationRequest{},
 		&Question{},

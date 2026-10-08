@@ -8,6 +8,7 @@ import (
 	"errors"
 	"joiask-backend/internal/avatar"
 	"joiask-backend/internal/database"
+	"joiask-backend/internal/mailer"
 	"joiask-backend/internal/secret"
 	"strconv"
 	"strings"
@@ -25,6 +26,7 @@ import (
 )
 
 const (
+	memberSessionVersionKey       = "member_session_version"
 	memberSessionKey              = "member_bilibili_uid"
 	verificationRequestSessionKey = "bilibili_verification_request_id"
 	verificationTokenSessionKey   = "bilibili_verification_token"
@@ -37,6 +39,7 @@ type AvatarStorage interface {
 
 type AccountController struct {
 	AvatarStorage AvatarStorage
+	MailSender    mailer.Sender
 }
 
 var startVerificationMutex sync.Mutex
@@ -81,6 +84,7 @@ func hashVerificationToken(token string) string {
 func publicUser(user database.User) gin.H {
 	return gin.H{
 		"username":        user.Username,
+		"email":           user.Email,
 		"bilibili_uid":    strconv.FormatInt(user.BilibiliUID, 10),
 		"bilibili_name":   user.BilibiliName,
 		"bilibili_avatar": user.BilibiliAvatar,
@@ -290,6 +294,7 @@ func (ctl *AccountController) Register(c *gin.Context) {
 	}
 	session := sessions.Default(c)
 	session.Set(memberSessionKey, user.BilibiliUID)
+	session.Set(memberSessionVersionKey, user.SessionVersion)
 	session.Delete(verificationRequestSessionKey)
 	session.Delete(verificationTokenSessionKey)
 	if err := session.Save(); err != nil {
@@ -305,14 +310,36 @@ func (*AccountController) Login(c *gin.Context) {
 		Fail(c, 400, "请求无效")
 		return
 	}
-	username := strings.TrimSpace(body.Username)
-	if username == "" || utf8.RuneCountInString(username) > 32 {
-		Fail(c, 401, "用户名或密码错误")
+	identifier := strings.TrimSpace(body.Username)
+	if identifier == "" || len(identifier) > 254 {
+		Fail(c, 401, "登录名、邮箱或密码错误")
+		return
+	}
+	query := database.DB.Where("username = ?", identifier)
+	if email, err := mailer.NormalizeEmail(identifier); err == nil {
+		query = query.Or("email = ?", email)
+	}
+	// Registration permits email-shaped usernames. Match the password against
+	// both namespaces and reject an ambiguous result instead of picking an account.
+	var candidates []database.User
+	if err := query.Limit(2).Find(&candidates).Error; err != nil {
+		Fail(c, 401, "登录名、邮箱或密码错误")
 		return
 	}
 	var user database.User
-	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil || bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(body.Password)) != nil {
-		Fail(c, 401, "用户名或密码错误")
+	matched := false
+	for _, candidate := range candidates {
+		if bcrypt.CompareHashAndPassword([]byte(candidate.PasswordHash), []byte(body.Password)) != nil {
+			continue
+		}
+		if matched {
+			Fail(c, 401, "登录名、邮箱或密码错误")
+			return
+		}
+		user, matched = candidate, true
+	}
+	if !matched {
+		Fail(c, 401, "登录名、邮箱或密码错误")
 		return
 	}
 	if user.IsDisabled {
@@ -321,6 +348,7 @@ func (*AccountController) Login(c *gin.Context) {
 	}
 	session := sessions.Default(c)
 	session.Set(memberSessionKey, user.BilibiliUID)
+	session.Set(memberSessionVersionKey, user.SessionVersion)
 	if err := session.Save(); err != nil {
 		Fail(c, 500, "内部错误")
 		return
@@ -340,6 +368,7 @@ func (*AccountController) Info(c *gin.Context) {
 func (*AccountController) Logout(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Delete(memberSessionKey)
+	session.Delete(memberSessionVersionKey)
 	if err := session.Save(); err != nil {
 		Fail(c, 500, "内部错误")
 		return
@@ -354,6 +383,10 @@ func currentMember(c *gin.Context) (database.User, bool) {
 	}
 	var user database.User
 	if err := database.DB.First(&user, uid).Error; err != nil || user.IsDisabled {
+		return database.User{}, false
+	}
+	version, _ := sessions.Default(c).Get(memberSessionVersionKey).(int)
+	if version != user.SessionVersion {
 		return database.User{}, false
 	}
 	return user, true

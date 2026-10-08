@@ -7,6 +7,7 @@ export interface SiteConfig {
   logo_url: string;
   favicon_url: string;
   custom_css: string;
+  email_enabled: boolean;
 }
 
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
@@ -15,6 +16,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
   logo_url: '/favicon.png',
   favicon_url: '/favicon.png',
   custom_css: DEFAULT_CUSTOM_CSS,
+  email_enabled: false,
 };
 
 const CONFIG_URL = process.env.SITE_CONFIG_API_URL || 'http://127.0.0.1:8080/api/config';
@@ -36,6 +38,7 @@ export const getSiteConfig = cache(async (): Promise<SiteConfig> => {
       logo_url: result.data.logo_url?.trim() || DEFAULT_SITE_CONFIG.logo_url,
       favicon_url: result.data.favicon_url?.trim() || DEFAULT_SITE_CONFIG.favicon_url,
       custom_css: result.data.custom_css?.trim() || DEFAULT_SITE_CONFIG.custom_css,
+      email_enabled: !!result.data.email_enabled,
     };
   } catch {
     return DEFAULT_SITE_CONFIG;

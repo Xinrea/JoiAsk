@@ -9,6 +9,7 @@ type DialogMode = 'login' | 'register';
 interface AccountAuthValue {
   user: AccountUser | null;
   loading: boolean;
+  emailEnabled: boolean;
   setUser: (user: AccountUser | null) => void;
   openAccountDialog: (mode?: DialogMode) => void;
   logout: () => Promise<void>;
@@ -16,7 +17,7 @@ interface AccountAuthValue {
 
 const AccountAuthContext = createContext<AccountAuthValue | null>(null);
 
-export function AccountAuthProvider({ children }: { children: React.ReactNode }) {
+export function AccountAuthProvider({ children, emailEnabled }: { children: React.ReactNode; emailEnabled: boolean }) {
   const [user, setUser] = useState<AccountUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [dialog, setDialog] = useState<{ open: boolean; mode: DialogMode }>({ open: false, mode: 'login' });
@@ -26,6 +27,23 @@ export function AccountAuthProvider({ children }: { children: React.ReactNode })
       .then((response) => setUser(response.code === 200 ? response.data : null))
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const refreshAccount = () => {
+      getAccountInfo()
+        .then((response) => setUser(response.code === 200 ? response.data : null))
+        .catch(() => undefined);
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refreshAccount();
+    };
+    window.addEventListener('focus', refreshAccount);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener('focus', refreshAccount);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
 
   const openAccountDialog = useCallback((mode: DialogMode = 'login') => {
@@ -41,10 +59,11 @@ export function AccountAuthProvider({ children }: { children: React.ReactNode })
   }, []);
 
   return (
-    <AccountAuthContext.Provider value={{ user, loading, setUser, openAccountDialog, logout }}>
+    <AccountAuthContext.Provider value={{ user, loading, emailEnabled, setUser, openAccountDialog, logout }}>
       {children}
       <AccountDialog
         open={dialog.open}
+        emailEnabled={emailEnabled}
         initialMode={dialog.mode}
         onClose={() => setDialog((value) => ({ ...value, open: false }))}
         onAuthenticated={(account) => {

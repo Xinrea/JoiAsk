@@ -41,7 +41,7 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased fabric-linen`}
       >
-        <AccountAuthProvider>
+        <AccountAuthProvider emailEnabled={config.email_enabled}>
           <EmojiCatalogProvider>
             <Navbar logoUrl={config.logo_url} />
             {children}

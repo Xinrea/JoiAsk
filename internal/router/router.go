@@ -67,6 +67,10 @@ func Run() {
 			api.POST("/account/login", accountController.Login)
 			api.GET("/account/info", accountController.Info)
 			api.POST("/account/logout", accountController.Logout)
+			api.POST("/account/email", accountController.RequestEmailBinding)
+			api.POST("/account/email/confirm", accountController.ConfirmEmailBinding)
+			api.POST("/account/password-reset", accountController.RequestPasswordReset)
+			api.POST("/account/password-reset/confirm", accountController.ResetPassword)
 		}
 		// User
 		{
