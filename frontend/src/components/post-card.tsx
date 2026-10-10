@@ -49,7 +49,6 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
   const cardRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [scrollEnd, setScrollEnd] = useState(true);
-  const [showImageModal, setShowImageModal] = useState(false);
   const [previewImage, setPreviewImage] = useState<number | null>(null);
   const [isArchived, setIsArchived] = useState(data.is_archive);
 
@@ -95,7 +94,9 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
     }
   }, []);
 
-  const imageList = data.images ? data.images.split(';').filter(Boolean) : [];
+  const imageList = data.images
+    ? data.images.split(';').filter(Boolean).map((image) => image.startsWith('upload-img/') ? `/${image}` : image)
+    : [];
 
   // Throttle cursor updates to reduce network traffic
   const lastCursorUpdate = useRef(0);
@@ -273,10 +274,12 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
               onScroll={handleScroll}
             >
               <div>
-                {data.images_num > 0 && (
-                  <div
+                {imageList.length > 0 && (
+                  <button
+                    type="button"
+                    aria-label={`查看投稿图片，共 ${imageList.length} 张`}
                     className="stamp float-right w-20 h-20 cursor-pointer p-2.5 text-center transition-transform duration-260 hover:translate-x-[-10px] hover:translate-y-[10px] relative z-[1]"
-                    onClick={() => setShowImageModal(true)}
+                    onClick={() => setPreviewImage(0)}
                     style={{
                       background: 'radial-gradient(transparent 0px, transparent 4px, var(--color-surface) 4px, var(--color-surface))',
                       backgroundSize: '20px 20px',
@@ -284,18 +287,18 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
                       filter: 'drop-shadow(-5px -5px 10px rgba(139, 111, 71, 0.1))',
                     }}
                   >
-                    <div
-                      className="stamp__content bg-card w-full h-full relative"
+                    <span
+                      className="stamp__content block bg-card w-full h-full relative"
                       style={{
                         backgroundImage: 'url(/image_stamp.png)',
                         backgroundSize: 'cover',
                       }}
                     >
                       <span className="absolute bottom-2 right-2 bg-black/60 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
-                        {data.images_num}
+                        {imageList.length}
                       </span>
-                    </div>
-                  </div>
+                    </span>
+                  </button>
                 )}
                 <FormattedContent content={data.content} />
                 {isArchived && (
@@ -397,36 +400,9 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
         </div>
       </div>
 
-      {/* Image Modal */}
-      {showImageModal && (
-        <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
-          onClick={() => setShowImageModal(false)}
-        >
-          <div className="p-2 w-[300px]" onClick={(e) => e.stopPropagation()}>
-            <div className="grid grid-cols-3 gap-3">
-              {imageList.map((image, index) => (
-                <div
-                  key={index}
-                  className="relative w-full pb-[100%] overflow-hidden rounded-lg cursor-pointer"
-                >
-                  <img
-                    src={image}
-                    alt={`Image ${index + 1}`}
-                    className="absolute top-0 left-0 w-full h-full object-cover transition-transform hover:scale-105"
-                    onClick={() => setPreviewImage(index)}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Full Image Preview */}
       {previewImage !== null && (
         <ImagePreview
-          key={imageList[previewImage]}
           src={imageList[previewImage]}
           images={imageList}
           currentIndex={previewImage}

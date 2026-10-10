@@ -13,27 +13,35 @@ interface ImagePreviewProps {
 
 export function ImagePreview({ src, images, currentIndex = 0, onClose, onIndexChange }: ImagePreviewProps) {
   const hasMultiple = (images?.length ?? 0) > 1;
-
-  const goToPrev = useCallback(() => {
-    if (!images || !onIndexChange) return;
-    const newIndex = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
-    onIndexChange(newIndex);
-  }, [images, onIndexChange, currentIndex]);
-
-  const goToNext = useCallback(() => {
-    if (!images || !onIndexChange) return;
-    const newIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
-    onIndexChange(newIndex);
-  }, [images, onIndexChange, currentIndex]);
-
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-  const imageRef = useRef<HTMLImageElement>(null);
+  const selectImage = useCallback((index: number) => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+    setRotation(0);
+    setIsDragging(false);
+    onIndexChange?.(index);
+  }, [onIndexChange]);
+
+  const goToPrev = useCallback(() => {
+    if (!images || !onIndexChange) return;
+    const newIndex = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
+    selectImage(newIndex);
+  }, [images, onIndexChange, currentIndex, selectImage]);
+
+  const goToNext = useCallback(() => {
+    if (!images || !onIndexChange) return;
+    const newIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
+    selectImage(newIndex);
+  }, [images, onIndexChange, currentIndex, selectImage]);
+
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const thumbnailsRef = useRef<HTMLDivElement>(null);
 
   // Touch gesture refs
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -42,15 +50,19 @@ export function ImagePreview({ src, images, currentIndex = 0, onClose, onIndexCh
 
   // Lock body scroll when preview is open
   useEffect(() => {
+    const dialog = dialogRef.current;
+    dialog?.showModal();
     const originalOverflow = document.body.style.overflow;
-    const originalTouchAction = document.body.style.touchAction;
     document.body.style.overflow = 'hidden';
-    document.body.style.touchAction = 'none';
     return () => {
+      dialog?.close();
       document.body.style.overflow = originalOverflow;
-      document.body.style.touchAction = originalTouchAction;
     };
   }, []);
+
+  useEffect(() => {
+    thumbnailsRef.current?.children[currentIndex]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [currentIndex]);
 
   // Handle zoom
   const handleZoom = useCallback((delta: number) => {
@@ -111,6 +123,7 @@ export function ImagePreview({ src, images, currentIndex = 0, onClose, onIndexCh
       // Pinch start
       pinchStartDistRef.current = getTouchDistance(e.touches[0], e.touches[1]);
       pinchStartScaleRef.current = scale;
+      touchStartRef.current = null;
       setIsDragging(false);
     } else if (e.touches.length === 1) {
       // Record for swipe detection + drag
@@ -150,6 +163,8 @@ export function ImagePreview({ src, images, currentIndex = 0, onClose, onIndexCh
     // Pinch end
     if (pinchStartDistRef.current !== null && e.touches.length < 2) {
       pinchStartDistRef.current = null;
+      setIsDragging(false);
+      touchStartRef.current = null;
       return;
     }
 
@@ -208,10 +223,8 @@ export function ImagePreview({ src, images, currentIndex = 0, onClose, onIndexCh
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       switch (e.key) {
-        case 'Escape':
-          onClose();
-          break;
         case '+':
         case '=':
           handleZoom(0.2);
@@ -239,118 +252,99 @@ export function ImagePreview({ src, images, currentIndex = 0, onClose, onIndexCh
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose, hasMultiple, goToPrev, goToNext, handleZoom]);
 
+  const toolbarButtonClass = "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/10 transition-colors before:absolute before:-inset-1 before:content-[''] hover:bg-white/20 active:bg-white/30 focus-visible:outline-2 focus-visible:outline-white";
+
   return (
-    <div
-      ref={containerRef}
-      className="fixed inset-0 z-[100] bg-black/95 select-none"
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+    <dialog
+      ref={dialogRef}
+      aria-label="投稿图片"
+      onCancel={(event) => { event.preventDefault(); onClose(); }}
+      className="fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none overflow-hidden border-0 bg-[#161412] p-0 text-white backdrop:bg-black/70"
     >
-      {/* Toolbar */}
-      <div className="absolute top-4 right-4 z-20 flex gap-2">
-        <button
-          onClick={() => handleZoom(0.2)}
-          className="p-2.5 sm:p-2 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-lg backdrop-blur-sm transition-colors"
-          title="放大 (+)"
-        >
-          <ZoomIn className="w-5 h-5 text-white" />
-        </button>
-        <button
-          onClick={() => handleZoom(-0.2)}
-          className="p-2.5 sm:p-2 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-lg backdrop-blur-sm transition-colors"
-          title="缩小 (-)"
-        >
-          <ZoomOut className="w-5 h-5 text-white" />
-        </button>
-        <button
-          onClick={handleRotate}
-          className="p-2.5 sm:p-2 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-lg backdrop-blur-sm transition-colors"
-          title="旋转 (R)"
-        >
-          <RotateCw className="w-5 h-5 text-white" />
-        </button>
-        <button
-          onClick={handleDownload}
-          className="p-2.5 sm:p-2 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-lg backdrop-blur-sm transition-colors"
-          title="下载"
-        >
-          <Download className="w-5 h-5 text-white" />
-        </button>
-        <button
-          onClick={onClose}
-          className="p-2.5 sm:p-2 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-lg backdrop-blur-sm transition-colors"
-          title="关闭 (ESC)"
-        >
-          <X className="w-5 h-5 text-white" />
-        </button>
-      </div>
-
-      {/* Scale indicator */}
-      <div className="absolute top-4 left-4 px-3 py-2 bg-white/10 rounded-lg backdrop-blur-sm text-white text-sm">
-        {Math.round(scale * 100)}%
-      </div>
-
-      {/* Prev button */}
-      {hasMultiple && (
-        <button
-          onClick={(e) => { e.stopPropagation(); goToPrev(); }}
-          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-10 p-3 sm:p-2 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-full backdrop-blur-sm transition-colors"
-          title="上一张 (←)"
-        >
-          <ChevronLeft className="w-6 h-6 text-white" />
-        </button>
-      )}
-
-      {/* Next button */}
-      {hasMultiple && (
-        <button
-          onClick={(e) => { e.stopPropagation(); goToNext(); }}
-          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 p-3 sm:p-2 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-full backdrop-blur-sm transition-colors"
-          title="下一张 (→)"
-        >
-          <ChevronRight className="w-6 h-6 text-white" />
-        </button>
-      )}
-
-      {/* Image counter */}
-      {hasMultiple && (
-        <div className="absolute bottom-14 left-1/2 transform -translate-x-1/2 px-3 py-1.5 bg-white/10 rounded-lg backdrop-blur-sm text-white text-sm">
-          {currentIndex + 1} / {images!.length}
+      <section aria-label="图片浏览" className="flex h-full min-h-0 flex-col">
+        <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-2 sm:px-5" style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}>
+          <button onClick={handleReset} className="rounded-lg px-2 py-2 text-sm text-white/75 hover:bg-white/10" title="重置 (0)">
+            {Math.round(scale * 100)}%
+          </button>
+          <div className="flex gap-2">
+            <button onClick={() => handleZoom(0.2)} className={toolbarButtonClass} title="放大 (+)" aria-label="放大">
+              <ZoomIn className="h-4.5 w-4.5" />
+            </button>
+            <button onClick={() => handleZoom(-0.2)} className={toolbarButtonClass} title="缩小 (-)" aria-label="缩小">
+              <ZoomOut className="h-4.5 w-4.5" />
+            </button>
+            <button onClick={handleRotate} className={toolbarButtonClass} title="旋转 (R)" aria-label="旋转">
+              <RotateCw className="h-4.5 w-4.5" />
+            </button>
+            <button onClick={handleDownload} className={toolbarButtonClass} title="下载" aria-label="下载图片">
+              <Download className="h-4.5 w-4.5" />
+            </button>
+            <button onClick={onClose} className={toolbarButtonClass} title="关闭 (ESC)" aria-label="关闭图片浏览" autoFocus>
+              <X className="h-4.5 w-4.5" />
+            </button>
+          </div>
         </div>
-      )}
 
-      {/* Image container */}
-      <div
-        className="absolute inset-0 top-16 bottom-16 flex items-center justify-center overflow-hidden px-16"
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-      >
-        <img
-          ref={imageRef}
-          src={src}
-          alt="Preview"
-          className="max-w-full max-h-full object-contain select-none"
-          draggable={false}
-          style={{
-            transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
-            transition: isDragging ? 'none' : 'transform 0.1s ease-out',
-          }}
-        />
-      </div>
+        <div className="relative min-h-0 flex-1">
+          <div
+            ref={containerRef}
+            className="absolute inset-0 flex touch-none items-center justify-center overflow-hidden px-3 py-2 sm:px-16 sm:py-4"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={() => { setIsDragging(false); touchStartRef.current = null; pinchStartDistRef.current = null; }}
+            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+          >
+            <img
+              src={src}
+              alt={`投稿图片 ${currentIndex + 1}`}
+              className="h-full w-full select-none object-contain"
+              draggable={false}
+              style={{
+                transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
+                transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+              }}
+            />
+          </div>
+          {hasMultiple && (
+            <>
+              <button onClick={goToPrev} className="absolute left-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 hover:bg-black/75 sm:left-4" title="上一张 (←)" aria-label="上一张">
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button onClick={goToNext} className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 hover:bg-black/75 sm:right-4" title="下一张 (→)" aria-label="下一张">
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </>
+          )}
+        </div>
 
-      {/* Instructions - desktop only */}
-      <div className="hidden sm:block absolute bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm text-white text-sm text-center">
-        拖拽移动 | 滚轮缩放 | +/- 缩放 | R 旋转 | 0 重置 | ESC 关闭{hasMultiple ? ' | ←/→ 切换' : ''}
-      </div>
-
-      {/* Instructions - mobile only */}
-      <div className="sm:hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm text-white text-xs text-center">
-        双指缩放 | 拖拽移动{hasMultiple ? ' | 左右滑动切换' : ''}
-      </div>
-    </div>
+        <div className="shrink-0 px-3 pb-3 pt-2 sm:px-5" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+          {hasMultiple && (
+            <div ref={thumbnailsRef} aria-label="选择图片" className="flex gap-2 overflow-x-auto overscroll-contain py-1">
+              {images!.map((image, index) => (
+                <button
+                  key={`${image}-${index}`}
+                  onClick={() => selectImage(index)}
+                  aria-label={`查看第 ${index + 1} 张图片`}
+                  aria-pressed={index === currentIndex}
+                  className={`h-12 w-12 shrink-0 overflow-hidden rounded-lg border-2 transition-opacity sm:h-16 sm:w-16 ${index === currentIndex ? 'border-white opacity-100' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                >
+                  <img src={image} alt="" className="h-full w-full object-cover" draggable={false} />
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="mt-2 flex items-center justify-between gap-3 text-xs text-white/60">
+            <span className="shrink-0">{currentIndex + 1} / {images?.length ?? 1}</span>
+            <span className="hidden sm:inline">拖拽移动 · 滚轮缩放 · R 旋转 · 0 重置{hasMultiple ? ' · ←/→ 切换' : ''}</span>
+            <span className="sm:hidden">双指缩放{hasMultiple ? ' · 左右滑动切换' : ''}</span>
+          </div>
+        </div>
+      </section>
+    </dialog>
   );
 }
