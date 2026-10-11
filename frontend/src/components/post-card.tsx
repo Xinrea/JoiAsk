@@ -406,6 +406,8 @@ export function PostCard({ data, isLoggedIn = false, emojiUpdates, archiveUpdate
           src={imageList[previewImage]}
           images={imageList}
           currentIndex={previewImage}
+          question={{ ...data, is_archive: isArchived }}
+          emojis={emojis}
           onClose={() => setPreviewImage(null)}
           onIndexChange={(index) => setPreviewImage(index)}
         />
