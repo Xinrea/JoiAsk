@@ -4,14 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"joiask-backend/internal/database"
 	"joiask-backend/internal/deepseek"
+	"joiask-backend/internal/imagefile"
 	"joiask-backend/internal/storage"
 	"joiask-backend/pkg/util"
+	"mime/multipart"
 	"net/http"
-	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -235,6 +237,30 @@ func (this *QuestionController) Put(c *gin.Context) {
 }
 
 func (*QuestionController) Post(c *gin.Context) {
+	// Limit the whole multipart request before any PostForm call parses it.
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 30<<20)
+	var formErr error
+	switch c.ContentType() {
+	case "multipart/form-data":
+		formErr = c.Request.ParseMultipartForm(1 << 20)
+	case "application/x-www-form-urlencoded":
+		formErr = c.Request.ParseForm()
+	default:
+		Fail(c, 400, "请求格式错误")
+		return
+	}
+	if c.Request.MultipartForm != nil {
+		defer c.Request.MultipartForm.RemoveAll()
+	}
+	if formErr != nil {
+		var sizeErr *http.MaxBytesError
+		if errors.As(formErr, &sizeErr) {
+			Fail(c, 413, "请求大小不能超过 30 MiB")
+		} else {
+			Fail(c, 400, "请求格式错误")
+		}
+		return
+	}
 	var config database.Config
 	if err := database.DB.First(&config).Error; err != nil {
 		Fail(c, 500, "内部错误")
@@ -273,22 +299,47 @@ func (*QuestionController) Post(c *gin.Context) {
 	q.Content = strings.Trim(c.PostForm("content"), " \r\n\t")
 	q.IsHide = c.PostForm("hide") == "true"
 	q.IsRainbow = c.PostForm("rainbow") == "true"
-	mp, _ := c.MultipartForm()
-	for _, v := range mp.File["files[]"] {
-		f, err := v.Open()
-		if err != nil {
-			log.Error(err)
-			Fail(c, 405, "文件上传失败")
+	// Validate the entire batch before writing anything to public storage.
+	// URL-encoded posts have no files.
+	var files []*multipart.FileHeader
+	if mp := c.Request.MultipartForm; mp != nil {
+		files = mp.File["files[]"]
+	}
+	if len(files) > 6 {
+		Fail(c, 400, "最多上传 6 张图片")
+		return
+	}
+	type imageUpload struct {
+		filename string
+		content  []byte
+	}
+	uploads := make([]imageUpload, 0, len(files))
+	for _, file := range files {
+		if file.Size <= 0 || file.Size > imagefile.MaxSize {
+			Fail(c, 400, "图片不能为空且不能超过 5 MiB")
 			return
 		}
-		fileContent, err := io.ReadAll(f)
+		opened, err := file.Open()
 		if err != nil {
 			log.Error(err)
-			Fail(c, 405, "文件上传失败")
+			Fail(c, 400, "图片读取失败")
 			return
 		}
-		newFileName := util.Md5v(string(fileContent)) + path.Ext(v.Filename)
-		url, err := storage.Get().Upload(newFileName, bytes.NewReader(fileContent))
+		content, readErr := imagefile.Read(opened)
+		closeErr := opened.Close()
+		if readErr != nil || closeErr != nil {
+			Fail(c, 400, "图片读取失败或大小无效")
+			return
+		}
+		extension := imagefile.RasterExtension(content)
+		if extension == "" {
+			Fail(c, 400, "仅支持 PNG、JPEG、GIF 或 WebP 图片")
+			return
+		}
+		uploads = append(uploads, imageUpload{util.Md5v(string(content)) + extension, content})
+	}
+	for _, upload := range uploads {
+		url, err := storage.Get().Upload(upload.filename, bytes.NewReader(upload.content))
 		if err != nil {
 			log.Error(err)
 			Fail(c, 500, "文件上传失败")

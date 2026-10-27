@@ -179,6 +179,8 @@ openssl rand -hex 32
 
 以下仅为存储配置片段，需合并到已配置 `security.session_secret` 的完整配置中。
 
+上传文件的安全响应头、历史本地/OSS 文件排查及 CDN 配置要求见 [上传文件部署安全说明](doc/upload-serving-security.md)。本地 Caddy/Next 的防护不覆盖直接从 OSS/CDN 返回的文件。
+
 #### 本地存储（推荐）
 
 图片存储在容器的 `/work/frontend/public/upload-img/` 目录。

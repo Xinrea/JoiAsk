@@ -7,10 +7,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"joiask-backend/internal/database"
+	"joiask-backend/internal/imagefile"
 	"joiask-backend/internal/storage"
-	"mime"
 	"net/http"
 	"net/url"
 	"path"
@@ -18,8 +17,6 @@ import (
 	"strings"
 	"time"
 )
-
-const maxAvatarSize = 5 << 20
 
 type Store struct {
 	Client  *http.Client
@@ -61,21 +58,13 @@ func (s *Store) Save(ctx context.Context, uid int64, remoteURL string) (string, 
 	if resp.StatusCode != http.StatusOK || !isAllowedBilibiliImageURL(resp.Request.URL) {
 		return "", fmt.Errorf("下载 B 站头像失败: HTTP %d", resp.StatusCode)
 	}
-	content, err := io.ReadAll(io.LimitReader(resp.Body, maxAvatarSize+1))
+	content, err := imagefile.Read(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("读取 B 站头像失败: %w", err)
 	}
-	if len(content) == 0 || len(content) > maxAvatarSize {
-		return "", errors.New("B 站头像大小无效")
-	}
-	contentType := http.DetectContentType(content)
-	extensions, _ := mime.ExtensionsByType(contentType)
-	if !strings.HasPrefix(contentType, "image/") || len(extensions) == 0 {
+	extension := imagefile.RasterExtension(content)
+	if extension == "" {
 		return "", errors.New("B 站头像格式无效")
-	}
-	extension := extensions[0]
-	if contentType == "image/jpeg" {
-		extension = ".jpg"
 	}
 	hash := sha256.Sum256(content)
 	filename := "bilibili-avatar-" + strconv.FormatInt(uid, 10) + "-" + hex.EncodeToString(hash[:8]) + extension

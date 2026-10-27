@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"io"
+	"joiask-backend/internal/imagefile"
 	"net/http"
 	"strings"
 	"testing"
@@ -55,6 +56,24 @@ func TestSaveAndDeleteBilibiliAvatar(t *testing.T) {
 	}
 	if objects.deletedFilename != objects.uploadedFilename {
 		t.Fatalf("unexpected deleted object: %q", objects.deletedFilename)
+	}
+}
+
+func TestRejectsUnsafeAvatarContent(t *testing.T) {
+	for _, content := range [][]byte{
+		nil,
+		[]byte("<script>alert(1)</script>"),
+		[]byte(`<svg onload="alert(1)"/>`),
+		append([]byte("\x89PNG\r\n\x1a\n"), make([]byte, imagefile.MaxSize)...),
+	} {
+		objects := new(fakeObjectStorage)
+		client := &http.Client{Transport: roundTripFunc(func(request *http.Request) (*http.Response, error) {
+			return &http.Response{StatusCode: http.StatusOK, Header: http.Header{"Content-Type": {"image/png"}}, Body: io.NopCloser(bytes.NewReader(content)), Request: request}, nil
+		})}
+		_, err := (&Store{Client: client, Storage: objects}).Save(context.Background(), 123, "https://i0.hdslb.com/avatar.png")
+		if err == nil || objects.uploadedFilename != "" {
+			t.Fatalf("unsafe avatar stored: size=%d, filename=%q, err=%v", len(content), objects.uploadedFilename, err)
+		}
 	}
 }
 

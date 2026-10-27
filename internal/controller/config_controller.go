@@ -2,12 +2,11 @@ package controller
 
 import (
 	"bytes"
-	"io"
 	"joiask-backend/internal/database"
+	"joiask-backend/internal/imagefile"
 	"joiask-backend/internal/mailer"
 	"joiask-backend/internal/storage"
 	"joiask-backend/pkg/util"
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -106,7 +105,7 @@ func (*ConfigController) UploadAsset(c *gin.Context) {
 		Fail(c, 400, "请选择图片文件")
 		return
 	}
-	if file.Size <= 0 || file.Size > 5<<20 {
+	if file.Size <= 0 || file.Size > imagefile.MaxSize {
 		Fail(c, 400, "图片大小不能超过 5 MB")
 		return
 	}
@@ -118,13 +117,12 @@ func (*ConfigController) UploadAsset(c *gin.Context) {
 	}
 	defer opened.Close()
 
-	content, err := io.ReadAll(io.LimitReader(opened, 5<<20+1))
-	if err != nil || len(content) == 0 || len(content) > 5<<20 {
+	content, err := imagefile.Read(opened)
+	if err != nil {
 		Fail(c, 400, "图片读取失败")
 		return
 	}
-	contentType := http.DetectContentType(content)
-	extension := assetExtension(content, contentType)
+	extension := assetExtension(content)
 	if extension == "" {
 		Fail(c, 400, "仅支持 PNG、JPEG、GIF、WebP 或 SVG 图片")
 		return
@@ -143,16 +141,9 @@ func (*ConfigController) UploadAsset(c *gin.Context) {
 	Success(c, AssetResponse{URL: url})
 }
 
-func assetExtension(content []byte, contentType string) string {
-	switch contentType {
-	case "image/png":
-		return ".png"
-	case "image/jpeg":
-		return ".jpg"
-	case "image/gif":
-		return ".gif"
-	case "image/webp":
-		return ".webp"
+func assetExtension(content []byte) string {
+	if extension := imagefile.RasterExtension(content); extension != "" {
+		return extension
 	}
 	trimmed := strings.TrimSpace(string(content))
 	if strings.HasPrefix(trimmed, "<svg") || strings.HasPrefix(trimmed, "<?xml") && strings.Contains(trimmed, "<svg") {

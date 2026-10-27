@@ -26,7 +26,24 @@
 		file_server
 	}
 
+	# Keep this allowlist and policy in sync with Caddyfile.dev and next.config.ts.
+	map {path} {upload_content_type} {upload_disposition} {
+		default application/octet-stream attachment
+		~(?i)\.png$ image/png inline
+		~(?i)\.jpe?g$ image/jpeg inline
+		~(?i)\.gif$ image/gif inline
+		~(?i)\.webp$ image/webp inline
+		~(?i)\.svg$ image/svg+xml inline
+	}
+
 	handle_path /upload-img/* {
+		# Even legacy SVG documents must not run scripts or retain our origin.
+		header {
+			Content-Security-Policy "sandbox; default-src 'none'; img-src data:; style-src 'unsafe-inline'"
+			X-Content-Type-Options nosniff
+			Content-Type {upload_content_type}
+			Content-Disposition {upload_disposition}
+		}
 		root * /work/frontend/public/upload-img
 		file_server
 	}
