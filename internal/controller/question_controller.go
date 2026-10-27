@@ -237,6 +237,17 @@ func (this *QuestionController) Put(c *gin.Context) {
 }
 
 func (*QuestionController) Post(c *gin.Context) {
+	// Reject gated anonymous submissions before reading or spooling their bodies.
+	var config database.Config
+	if err := database.DB.First(&config).Error; err != nil {
+		Fail(c, 500, "内部错误")
+		return
+	}
+	member, memberLoggedIn := currentMember(c)
+	if config.RequireVerifiedUserToPost && !memberLoggedIn {
+		Fail(c, 403, "投稿需要先完成 B 站验证并登录")
+		return
+	}
 	// Limit the whole multipart request before any PostForm call parses it.
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 30<<20)
 	var formErr error
@@ -259,16 +270,6 @@ func (*QuestionController) Post(c *gin.Context) {
 		} else {
 			Fail(c, 400, "请求格式错误")
 		}
-		return
-	}
-	var config database.Config
-	if err := database.DB.First(&config).Error; err != nil {
-		Fail(c, 500, "内部错误")
-		return
-	}
-	member, memberLoggedIn := currentMember(c)
-	if config.RequireVerifiedUserToPost && !memberLoggedIn {
-		Fail(c, 403, "投稿需要先完成 B 站验证并登录")
 		return
 	}
 	realName := c.PostForm("real_name") == "true"

@@ -186,6 +186,46 @@ func TestQuestionUploadRejectsMalformedAndOversizedBodies(t *testing.T) {
 	}
 }
 
+func TestQuestionUploadChecksAccessBeforeReadingBody(t *testing.T) {
+	router := questionUploadRouter(t)
+	if err := database.DB.Model(&database.Config{}).Where("1 = 1").Update("require_verified_user_to_post", true).Error; err != nil {
+		t.Fatal(err)
+	}
+	request := httptest.NewRequest(http.MethodPost, "/api/question", nil)
+	request.Header.Set("Content-Type", "multipart/form-data; boundary=test")
+	request.Body = unreadQuestionBody{t}
+	if response := questionUploadResponse(t, router, request); response.Code != 403 {
+		t.Fatalf("gated anonymous request: %+v", response)
+	}
+}
+
+type unreadQuestionBody struct{ t *testing.T }
+
+func (body unreadQuestionBody) Read([]byte) (int, error) {
+	body.t.Fatal("read anonymous body before rejecting gated post")
+	return 0, nil
+}
+
+func (unreadQuestionBody) Close() error { return nil }
+
+func TestQuestionUploadTotalLimitIncludesMultipartOverhead(t *testing.T) {
+	router := questionUploadRouter(t)
+	content := make([]byte, imagefile.MaxSize)
+	copy(content, testPNG(t))
+	file := questionTestFile{"image.png", "image/png", content}
+	request := questionMultipartRequest(t, []questionTestFile{file, file, file, file, file, file})
+	if request.ContentLength <= 30<<20 {
+		t.Fatal("expected multipart overhead beyond the file data")
+	}
+	if response := questionUploadResponse(t, router, request); response.Code != 413 {
+		t.Fatalf("total request limit: %+v", response)
+	}
+	entries, err := os.ReadDir("frontend/public/upload-img")
+	if err != nil || len(entries) != 0 {
+		t.Fatalf("unexpected storage writes: %v, %v", entries, err)
+	}
+}
+
 func TestSiteAssetKeepsExplicitSVGException(t *testing.T) {
 	if got := assetExtension([]byte(`<svg xmlns="http://www.w3.org/2000/svg"/>`)); got != ".svg" {
 		t.Fatalf("SVG extension = %q", got)
