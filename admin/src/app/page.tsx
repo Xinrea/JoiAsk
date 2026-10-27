@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import md5 from "md5";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,7 +45,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const res = await apiLogin(username, md5(password));
+      const res = await apiLogin(username, password);
       if (res.code === 200) {
         login(res.data);
         // 使用整页跳转，确保带上服务端设置的 cookie 并正确进入后台

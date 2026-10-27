@@ -18,6 +18,9 @@ import (
 
 func Run(store sessions.Store) {
 	r := gin.Default()
+	if err := configureTrustedProxies(r); err != nil {
+		logrus.Fatal("Invalid security.trusted_proxies configuration: ", err)
+	}
 	r.MaxMultipartMemory = 30 << 20 // 30 MB
 	r.Use(gin.Recovery())
 	r.Use(cors.New(cors.Config{

@@ -3,11 +3,13 @@ package database
 import (
 	"encoding/json"
 	"joiask-backend/internal/deepseek"
+	"joiask-backend/pkg/util"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -58,6 +60,14 @@ func TestInitializeDBFromPreviousSchema(t *testing.T) {
 
 	initializeDB()
 
+	var admin Admin
+	if err := DB.Where("username = ?", "admin").First(&admin).Error; err != nil {
+		t.Fatal(err)
+	}
+	if bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte("admin")) != nil {
+		t.Fatal("new default administrator must use bcrypt")
+	}
+
 	var question Question
 	if err := DB.First(&question).Error; err != nil {
 		t.Fatal(err)
@@ -104,6 +114,27 @@ func TestInitializeDBFromPreviousSchema(t *testing.T) {
 	}
 	if emojiCount != int64(len(DefaultEmojis)-1) {
 		t.Fatalf("expected deleted default emoji to stay deleted, got %d records", emojiCount)
+	}
+}
+
+func TestInitializeDBPreservesLegacyAdminPassword(t *testing.T) {
+	var err error
+	DB, err = gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "legacy-admin.db")), &gorm.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := DB.AutoMigrate(&Admin{}); err != nil {
+		t.Fatal(err)
+	}
+	legacy := util.Md5v("existing-password")
+	if err := DB.Create(&Admin{Username: "admin", Password: legacy}).Error; err != nil {
+		t.Fatal(err)
+	}
+	initializeDB()
+	initializeDB()
+	var admin Admin
+	if err := DB.Where("username = ?", "admin").First(&admin).Error; err != nil || admin.Password != legacy {
+		t.Fatal("initialization must preserve existing admin credentials")
 	}
 }
 

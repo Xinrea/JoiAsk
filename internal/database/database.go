@@ -2,8 +2,8 @@ package database
 
 import (
 	"fmt"
+	"joiask-backend/internal/adminpassword"
 	"joiask-backend/internal/deepseek"
-	"joiask-backend/pkg/util"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -64,6 +64,7 @@ func initializeDB() {
 		&User{},
 		&EmailToken{},
 		&EmailRateLimit{},
+		&AdminLoginRateLimit{},
 		&BilibiliVerificationAccount{},
 		&BilibiliVerificationRequest{},
 		&Question{},
@@ -79,7 +80,11 @@ func initializeDB() {
 	// Initialize default admin account.
 	if DB.Where("username = ?", "admin").First(&Admin{}).RowsAffected == 0 {
 		log.Info("Initializing default admin account.")
-		if err := DB.Create(&Admin{Username: "admin", Password: util.Md5v("admin")}).Error; err != nil {
+		passwordHash, err := adminpassword.Hash("admin")
+		if err != nil {
+			log.Fatal("Failed to hash default admin password.", err)
+		}
+		if err := DB.Create(&Admin{Username: "admin", Password: passwordHash}).Error; err != nil {
 			log.Fatal("Failed to initialize default admin account.", err)
 		}
 	}
