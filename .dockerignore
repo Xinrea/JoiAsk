@@ -2,3 +2,6 @@
 **/.next
 **/node_modules
 **/out
+# Keep private runtime configuration out of Docker build contexts/images.
+config.json
+config/config.json

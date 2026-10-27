@@ -6,7 +6,7 @@
     "port": 8080
   },
   "security": {
-    "session_secret": "dev-only-session-secret-change-in-production",
+    "session_secret": "",
     "bilibili_cookie_key": "dev-only-cookie-key-change-in-production",
     "secure_cookie": false
   },

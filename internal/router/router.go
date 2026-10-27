@@ -6,19 +6,17 @@ import (
 	"joiask-backend/internal/bilibili"
 	"joiask-backend/internal/controller"
 	"joiask-backend/internal/verification"
-	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
-func Run() {
+func Run(store sessions.Store) {
 	r := gin.Default()
 	r.MaxMultipartMemory = 30 << 20 // 30 MB
 	r.Use(gin.Recovery())
@@ -28,18 +26,6 @@ func Run() {
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 	}))
-	sessionSecret := viper.GetString("security.session_secret")
-	if len(sessionSecret) < 32 {
-		logrus.Warn("security.session_secret is not configured; using the legacy session key")
-		sessionSecret = "WhyJoiIsSoCute"
-	}
-	store := cookie.NewStore([]byte(sessionSecret))
-	store.Options(sessions.Options{
-		Path:     "/",
-		Secure:   viper.GetBool("security.secure_cookie"),
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
 	r.Use(sessions.Sessions("session", store))
 	api := r.Group("/api")
 	tagController := new(controller.TagController)
