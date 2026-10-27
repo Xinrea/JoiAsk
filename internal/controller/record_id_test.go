@@ -19,6 +19,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -217,7 +218,7 @@ func TestRecordIDEndpointsAcceptNumericIDs(t *testing.T) {
 				case *database.Emoji:
 					updated = record.Tag == "[updated]" && record.URL == "/updated.png"
 				case *database.Admin:
-					updated = record.Username == "updated" && record.Password == "updated"
+					updated = record.Username == "updated" && bcrypt.CompareHashAndPassword([]byte(record.Password), []byte("updated")) == nil
 				}
 				if !updated {
 					t.Fatalf("record not updated: %+v", endpoint.model)

@@ -1,11 +1,14 @@
 package controller
 
 import (
+	"errors"
+	"joiask-backend/internal/adminpassword"
 	"joiask-backend/internal/database"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 type UserController struct{}
@@ -30,19 +33,36 @@ func (*UserController) Info(c *gin.Context) {
 }
 
 func (*UserController) Login(c *gin.Context) {
+	if !checkAdminLoginRate(c) {
+		return
+	}
 	var request LoginRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		Fail(c, 400, "请求无效")
 		return
 	}
+	if request.Username == "" || request.Password == "" {
+		Fail(c, 400, "用户名和密码不能为空")
+		return
+	}
 	var user database.Admin
 	err := database.DB.Where("username = ?", request.Username).First(&user).Error
 	if err != nil {
-		Fail(c, 404, "用户不存在")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			Fail(c, 401, "用户名或密码错误")
+		} else {
+			Fail(c, 500, "内部错误")
+		}
 		return
 	}
-	if request.Password != user.Password {
-		Fail(c, 401, "密码错误")
+	matches, err := verifyAndUpgradeAdminPassword(&user, request.Password)
+	if err != nil {
+		log.Errorf("failed to migrate admin password: %v", err)
+		Fail(c, 500, "内部错误")
+		return
+	}
+	if !matches {
+		Fail(c, 401, "用户名或密码错误")
 		return
 	}
 	session := sessions.Default(c)
@@ -54,6 +74,36 @@ func (*UserController) Login(c *gin.Context) {
 		return
 	}
 	Success(c, nil)
+}
+
+func verifyAndUpgradeAdminPassword(user *database.Admin, password string) (bool, error) {
+	matches, needsMigration := adminpassword.Verify(user.Password, password)
+	if !matches || !needsMigration {
+		return matches, nil
+	}
+	hash, err := adminpassword.Hash(password)
+	if err != nil {
+		return false, err
+	}
+	// Do not overwrite a concurrent password reset, deletion, or migration.
+	result := database.DB.Model(&database.Admin{}).
+		Where("id = ? AND password = ?", user.ID, user.Password).
+		Update("password", hash)
+	if result.Error != nil {
+		return false, result.Error
+	}
+	if result.RowsAffected == 0 {
+		if err := database.DB.First(user, user.ID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return false, nil
+			}
+			return false, err
+		}
+		matches, _ := adminpassword.Verify(user.Password, password)
+		return matches, nil
+	}
+	user.Password = hash
+	return true, nil
 }
 
 func (*UserController) Logout(c *gin.Context) {
@@ -95,12 +145,26 @@ func (*UserController) Put(c *gin.Context) {
 		Fail(c, 400, "请求无效")
 		return
 	}
+	updates := map[string]interface{}{}
 	if request.Username != "" {
 		user.Username = request.Username
+		updates["username"] = request.Username
 	}
-	user.Password = request.Password
-	if err := database.DB.Save(&user).Error; err != nil {
-		log.Errorf("failed to save user: %v", err)
+	// An omitted or empty password leaves the existing credential unchanged.
+	if request.Password != "" {
+		hash, err := adminpassword.Hash(request.Password)
+		if err != nil {
+			adminPasswordError(c, err)
+			return
+		}
+		user.Password = hash
+		updates["password"] = hash
+	}
+	// Only update requested fields: saving a stale full record could revert a
+	// concurrent password migration/reset or recreate a deleted administrator.
+	result := database.DB.Model(&database.Admin{}).Where("id = ?", user.ID).Updates(updates)
+	if result.Error != nil {
+		log.Errorf("failed to save user: %v", result.Error)
 		Fail(c, 500, "内部错误")
 		return
 	}
@@ -118,15 +182,33 @@ func (*UserController) Post(c *gin.Context) {
 		Fail(c, 400, "请求无效")
 		return
 	}
+	if request.Username == "" {
+		Fail(c, 400, "用户名不能为空")
+		return
+	}
+	hash, err := adminpassword.Hash(request.Password)
+	if err != nil {
+		adminPasswordError(c, err)
+		return
+	}
 	var user database.Admin
 	user.Username = request.Username
-	user.Password = request.Password
+	user.Password = hash
 	if err := database.DB.Create(&user).Error; err != nil {
 		log.Errorf("failed to create user: %v", err)
 		Fail(c, 501, "创建用户失败")
 		return
 	}
 	Success(c, user)
+}
+
+func adminPasswordError(c *gin.Context, err error) {
+	if errors.Is(err, adminpassword.ErrEmptyPassword) {
+		Fail(c, 400, err.Error())
+		return
+	}
+	log.Errorf("failed to hash admin password: %v", err)
+	Fail(c, 500, "内部错误")
 }
 
 func (*UserController) Delete(c *gin.Context) {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import md5 from "md5";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,7 +70,7 @@ export default function UsersPage() {
       setError("用户名不能为空");
       return;
     }
-    if (!formData.password.trim()) {
+    if (dialog.mode === "add" && !formData.password.trim()) {
       setError("密码不能为空");
       return;
     }
@@ -79,7 +78,7 @@ export default function UsersPage() {
     try {
       const data = {
         username: formData.username,
-        password: md5(formData.password),
+        password: formData.password,
       };
 
       if (dialog.mode === "add") {
@@ -248,7 +247,7 @@ export default function UsersPage() {
                   setFormData({ ...formData, password: e.target.value })
                 }
                 placeholder={
-                  dialog.mode === "edit" ? "输入新密码" : "请输入密码"
+                  dialog.mode === "edit" ? "留空则不修改密码" : "请输入密码"
                 }
               />
             </div>

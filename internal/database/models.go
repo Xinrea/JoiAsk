@@ -128,6 +128,12 @@ type EmailRateLimit struct {
 	Count       int
 }
 
+type AdminLoginRateLimit struct {
+	Key         string    `gorm:"size:64;primaryKey"`
+	WindowStart time.Time `gorm:"index;not null"`
+	Count       int       `gorm:"not null;default:0"`
+}
+
 type LikeRecord struct {
 	BaseModel
 	IP         string   `gorm:"uniqueIndex:idx_like_records_ip_question" json:"ip"`
