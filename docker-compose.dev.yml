@@ -33,7 +33,7 @@ services:
       dockerfile: Dockerfile.dev
       target: backend-dev
     environment:
-      JOIASK_CONFIG: /app/config/config_dev.json
+      JOIASK_CONFIG: /app/config/config.json
     volumes:
       - .:/app
       - backend-go-modules:/go/pkg/mod

@@ -13,7 +13,7 @@
         "port": 8080
     },
   "security": {
-    "session_secret": "replace-with-a-long-random-secret",
+    "session_secret": "",
     "bilibili_cookie_key": "replace-with-an-independent-long-random-key",
     "secure_cookie": false
   },

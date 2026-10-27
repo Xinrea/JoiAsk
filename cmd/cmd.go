@@ -21,8 +21,12 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Info("Config loaded")
+	store, err := router.NewSessionStore(viper.GetString("security.session_secret"), viper.GetBool("security.secure_cookie"))
+	if err != nil {
+		log.Fatal(err)
+	}
 	database.Init()
 	log.Info("Database initialized")
 	log.Info("Starting server")
-	router.Run()
+	router.Run(store)
 }

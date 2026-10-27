@@ -20,9 +20,20 @@
         "host": "0.0.0.0",
         "port": 8080
     },
+    "security": {
+        "session_secret": ""
+    },
     "storage_type": "local"
 }
 ```
+
+**启动前必须填写 `security.session_secret`**：运行以下命令，将输出填入上面的空字符串位置，并妥善保存配置，不要提交到仓库。该要求适用于所有部署，无论是否启用 B 站验证。
+
+```bash
+openssl rand -hex 32
+```
+
+已有部署请保留有效的密钥，不要每次启动都重新生成。详细要求和轮换影响见下方「Session 与 B 站验证安全配置」。
 
 #### 2. 启动容器
 
@@ -85,6 +96,8 @@ docker run -d --restart always \
 
 ### 数据库配置
 
+以下完整示例的 `security.session_secret` 留空，首次运行前必须用 `openssl rand -hex 32` 的输出填写；已有部署保留有效密钥。
+
 #### 使用 SQLite（推荐新手）
 
 SQLite 是单文件数据库，无需额外安装数据库服务。
@@ -96,6 +109,9 @@ SQLite 是单文件数据库，无需额外安装数据库服务。
     "server": {
         "host": "0.0.0.0",
         "port": 8080
+    },
+    "security": {
+        "session_secret": ""
     },
     "storage_type": "local"
 }
@@ -123,29 +139,45 @@ SQLite 是单文件数据库，无需额外安装数据库服务。
         "host": "0.0.0.0",
         "port": 8080
     },
+    "security": {
+        "session_secret": ""
+    },
     "storage_type": "local"
 }
 ```
 
-### 账号与 B 站验证安全配置
+### Session 与 B 站验证安全配置
 
-启用 B 站关注验证前，请为 Session 签名和 B 站 Cookie 加密分别设置独立的随机密钥（建议至少 32 个字符）：
+**所有部署（包括未启用 B 站验证的部署和本地开发）都必须配置 `security.session_secret`。** 使用下面的命令生成随机值，将输出的 64 个十六进制字符填入配置文件；不要直接使用示例中的空字符串，也不要将真实密钥提交到仓库：
+
+```bash
+openssl rand -hex 32
+```
+
+`session_secret` 去除首尾空白后必须至少 32 字节；校验通过后仍使用配置的原始字节签名，不会修改已有有效密钥。缺失、空字符串、纯空白，以及历史默认值 `WhyJoiIsSoCute`、旧示例值 `replace-with-a-long-random-secret`、旧开发值 `dev-only-session-secret-change-in-production`（包括这些值前后带空白的写法）都会被拒绝。后端会在初始化数据库之前报错退出，不会回退到任何默认密钥。
+
+以下是安全配置片段，需合并到完整配置中。启用 B 站关注验证时，另行运行一次上述命令生成独立的 `bilibili_cookie_key`，不要与 Session 密钥共用：
 
 ```json
 {
     "security": {
-        "session_secret": "replace-with-a-long-random-secret",
+        "session_secret": "",
         "bilibili_cookie_key": "replace-with-an-independent-long-random-key",
         "secure_cookie": true
     }
 }
 ```
 
+- 将 Session 密钥保存在持久化的私有配置中，重启、重新构建和更新镜像时保持不变；同一部署的多个实例使用同一密钥。不要在每次启动时重新生成。
+- 更换 Session 密钥会让所有用户（包括管理员）的现有登录会话失效，需要重新登录；尚未完成注册的用户也必须重新开始注册流程。仅更换此密钥不需要迁移业务数据；没有接受旧密钥的宽限期。
 - HTTPS 部署应将 `secure_cookie` 设为 `true`；本地 HTTP 开发保持 `false`。
+- `bilibili_cookie_key` 仅用于 B 站 Cookie 加密，与 Session 签名密钥相互独立。本次 Session 配置升级不要更换已有的 `bilibili_cookie_key`，以免影响已保存 Cookie 的解密。
 - 未配置 `bilibili_cookie_key` 时，已有用户仍可登录，但不能配置验证账号或发起新注册验证。
-- 可通过 `JOIASK_CONFIG=/path/to/config.json` 指定配置文件；未设置时仍读取 `./config/config.json`。
+- 可通过现有的 `JOIASK_CONFIG=/path/to/config.json` 指定配置文件；未设置时读取当前工作目录下的 `./config/config.json`。Session 密钥从该配置文件读取，没有单独的环境变量覆盖项。
 
 ### 图片存储配置
+
+以下仅为存储配置片段，需合并到已配置 `security.session_secret` 的完整配置中。
 
 #### 本地存储（推荐）
 
@@ -207,6 +239,8 @@ server {
 
 ## 完整配置示例
 
+以下示例中的 `security.session_secret` 故意留空。首次部署前运行 `openssl rand -hex 32` 并填入输出；已有部署保留其有效密钥。未填写时后端不会启动。
+
 ### 最小配置（SQLite + 本地存储）
 
 ```json
@@ -217,11 +251,16 @@ server {
         "host": "0.0.0.0",
         "port": 8080
     },
+    "security": {
+        "session_secret": ""
+    },
     "storage_type": "local"
 }
 ```
 
 ### 生产环境配置（MySQL + OSS）
+
+此示例假定通过 HTTPS 访问，因此启用 `secure_cookie`。
 
 ```json
 {
@@ -237,6 +276,10 @@ server {
         "host": "0.0.0.0",
         "port": 8080
     },
+    "security": {
+        "session_secret": "",
+        "secure_cookie": true
+    },
     "storage_type": "oss",
     "oss": {
         "address": "https://cdn.example.com",
@@ -250,7 +293,7 @@ server {
 
 ## Docker Compose（可选）
 
-创建 `docker-compose.yml`:
+先按快速开始准备并填写 `config.json`（包括必填的 `security.session_secret`），再创建 `docker-compose.yml`：
 
 ```yaml
 version: '3.8'
@@ -275,6 +318,12 @@ docker-compose up -d
 ```
 
 ## 更新容器
+
+**先更新配置，再切换到新镜像。** 新版不会为缺失或无效的 Session 密钥提供默认值，直接升级会导致后端在数据库初始化前退出。容器启动脚本会随之停止前端和 Caddy；配合 `restart: always` / `--restart always` 会反复重启，整个站点将不可用，直到修正配置。
+
+1. 检查当前实际挂载的 `config.json`。若 `security.session_secret` 缺失或无效，先运行 `openssl rand -hex 32`，将输出填入该字段并持久保存；已有有效密钥无需更换。不要修改已有的 `bilibili_cookie_key`。
+2. 旧版本已支持配置 `security.session_secret`，可先重启旧版本使新密钥生效，再更新镜像。密钥切换时所有用户都需重新登录，未完成注册的用户需重新开始；没有旧密钥宽限期，也无需为此迁移业务数据。
+3. 确认配置已就绪后，执行下列容器更新步骤。后续更新继续使用同一密钥，不要随镜像更新轮换。
 
 ```bash
 # 停止并删除旧容器
