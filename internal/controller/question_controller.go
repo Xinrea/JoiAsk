@@ -19,7 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sse"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -132,10 +131,7 @@ type QuestionModifyRequest struct {
 
 // Get questions
 func (*QuestionController) Get(c *gin.Context) {
-	// Prepare for auth
-	if sessions.Default(c).Get("authed") == true {
-		c.Set("authed", true)
-	}
+	// Only router-validated administrator context may bypass public visibility.
 	var questionList []database.Question
 	var total int64
 	var request QuestionRequest
