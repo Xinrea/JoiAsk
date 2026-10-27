@@ -69,8 +69,12 @@ func (*EmojiController) Post(c *gin.Context) {
 }
 
 func (*EmojiController) Put(c *gin.Context) {
+	id, ok := parseRecordID(c, c.Param("id"))
+	if !ok {
+		return
+	}
 	var emoji database.Emoji
-	if err := database.DB.First(&emoji, c.Param("id")).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+	if err := database.DB.First(&emoji, id).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		Fail(c, 404, "emoji not found")
 		return
 	} else if err != nil {
@@ -101,8 +105,12 @@ func (*EmojiController) Put(c *gin.Context) {
 }
 
 func (*EmojiController) Delete(c *gin.Context) {
+	id, ok := parseRecordID(c, c.Param("id"))
+	if !ok {
+		return
+	}
 	var emoji database.Emoji
-	if err := database.DB.First(&emoji, c.Param("id")).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+	if err := database.DB.First(&emoji, id).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		Fail(c, 404, "emoji not found")
 		return
 	} else if err != nil {

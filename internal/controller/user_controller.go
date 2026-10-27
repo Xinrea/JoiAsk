@@ -80,8 +80,12 @@ func (*UserController) Put(c *gin.Context) {
 		Fail(c, 403, "没有权限")
 		return
 	}
+	id, ok := parseRecordID(c, c.Param("id"))
+	if !ok {
+		return
+	}
 	var user database.Admin
-	database.DB.First(&user, c.Param("id"))
+	database.DB.First(&user, id)
 	if user.ID == 0 {
 		Fail(c, 404, "用户不存在")
 		return
@@ -131,8 +135,12 @@ func (*UserController) Delete(c *gin.Context) {
 		Fail(c, 403, "没有权限")
 		return
 	}
+	id, ok := parseRecordID(c, c.Param("id"))
+	if !ok {
+		return
+	}
 	var user database.Admin
-	database.DB.First(&user, c.Param("id"))
+	database.DB.First(&user, id)
 	if user.ID == 0 {
 		Fail(c, 404, "用户不存在")
 		return

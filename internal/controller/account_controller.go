@@ -163,9 +163,9 @@ func (*AccountController) StartVerification(c *gin.Context) {
 
 func loadSessionVerification(c *gin.Context) (database.BilibiliVerificationRequest, error) {
 	session := sessions.Default(c)
-	id := session.Get(verificationRequestSessionKey)
+	id, validID := session.Get(verificationRequestSessionKey).(uint)
 	token, ok := session.Get(verificationTokenSessionKey).(string)
-	if id == nil || !ok || token == "" {
+	if !validID || id == 0 || !ok || token == "" {
 		return database.BilibiliVerificationRequest{}, gorm.ErrRecordNotFound
 	}
 	var request database.BilibiliVerificationRequest
@@ -377,8 +377,8 @@ func (*AccountController) Logout(c *gin.Context) {
 }
 
 func currentMember(c *gin.Context) (database.User, bool) {
-	uid := sessions.Default(c).Get(memberSessionKey)
-	if uid == nil {
+	uid, ok := sessions.Default(c).Get(memberSessionKey).(int64)
+	if !ok || uid <= 0 {
 		return database.User{}, false
 	}
 	var user database.User

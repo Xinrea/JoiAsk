@@ -24,8 +24,12 @@ func (t *TagController) Get(c *gin.Context) {
 
 // Put modify tag
 func (t *TagController) Put(c *gin.Context) {
+	id, ok := parseRecordID(c, c.Param("id"))
+	if !ok {
+		return
+	}
 	var tag database.Tag
-	database.DB.First(&tag, c.Param("id"))
+	database.DB.First(&tag, id)
 	if tag.ID == 0 {
 		Fail(c, 404, "tag not found")
 		return
@@ -64,8 +68,12 @@ func (t *TagController) Post(c *gin.Context) {
 }
 
 func (t *TagController) Delete(c *gin.Context) {
+	id, ok := parseRecordID(c, c.Param("id"))
+	if !ok {
+		return
+	}
 	var tag database.Tag
-	database.DB.First(&tag, c.Param("id"))
+	database.DB.First(&tag, id)
 	if tag.ID == 0 {
 		Fail(c, 404, "话题不存在")
 		return

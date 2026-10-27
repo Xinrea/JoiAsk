@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -19,6 +21,23 @@ func Fail(c *gin.Context, code int, message string) {
 		"message": message,
 		"data":    nil,
 	})
+}
+
+// parseRecordID keeps untrusted strings out of GORM's inline SQL conditions.
+// IDs must contain only decimal digits and fit the int fields used by relations.
+func parseRecordID(c *gin.Context, raw string) (int, bool) {
+	for _, digit := range raw {
+		if digit < '0' || digit > '9' {
+			Fail(c, 400, "ID 必须是正整数")
+			return 0, false
+		}
+	}
+	id, err := strconv.Atoi(raw)
+	if err != nil || id <= 0 {
+		Fail(c, 400, "ID 必须是正整数")
+		return 0, false
+	}
+	return id, true
 }
 
 func getOrderBy(orderBy string) string {

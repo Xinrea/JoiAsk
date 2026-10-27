@@ -194,13 +194,17 @@ func (*QuestionController) Get(c *gin.Context) {
 }
 
 func (this *QuestionController) Put(c *gin.Context) {
+	id, ok := parseRecordID(c, c.Param("id"))
+	if !ok {
+		return
+	}
 	var request QuestionModifyRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		Fail(c, 400, "请求错误")
 		return
 	}
 	var q database.Question
-	database.DB.First(&q, c.Param("id"))
+	database.DB.First(&q, id)
 	if q.ID == 0 {
 		Fail(c, 404, "提问不存在")
 		return
@@ -246,8 +250,11 @@ func (*QuestionController) Post(c *gin.Context) {
 		Fail(c, 403, "实名投稿需要先完成 B 站验证并登录")
 		return
 	}
+	tagID, ok := parseRecordID(c, c.PostForm("tag_id"))
+	if !ok {
+		return
+	}
 	var tag database.Tag
-	tagID := c.PostForm("tag_id")
 	database.DB.First(&tag, tagID)
 	if tag.ID == 0 {
 		Fail(c, 404, "话题不存在")
@@ -325,8 +332,11 @@ func checkQuestionSpam(questionID uint, content string, imagesNum int) {
 }
 
 func (*QuestionController) Delete(c *gin.Context) {
+	id, ok := parseRecordID(c, c.Param("id"))
+	if !ok {
+		return
+	}
 	var q database.Question
-	id := c.Param("id")
 	err := database.DB.First(&q, id).Error
 	if q.ID == 0 {
 		log.Error(err)
