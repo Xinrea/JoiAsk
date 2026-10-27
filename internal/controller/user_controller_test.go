@@ -28,12 +28,16 @@ func setupAdminTest(t *testing.T) *gin.Engine {
 	r.Use(sessions.Sessions("session", cookie.NewStore([]byte("test-session-secret-that-is-long-enough"))))
 	r.POST("/login", controller.Login)
 	r.GET("/session", func(c *gin.Context) {
-		session := sessions.Default(c)
-		if session.Get("authed") != true || session.Get("user") == nil {
+		admin, ok, err := CurrentAdmin(c)
+		if err != nil {
+			Fail(c, 500, "内部错误")
+			return
+		}
+		if !ok {
 			Fail(c, 401, "未登录")
 			return
 		}
-		Success(c, session.Get("user"))
+		Success(c, admin.ID)
 	})
 	r.POST("/user", func(c *gin.Context) {
 		c.Set("user", database.Admin{Username: "admin"})
@@ -94,6 +98,9 @@ func testAdminLegacyLoginMigratesWithoutHashReplay(t *testing.T, password string
 	}
 	if err := database.DB.First(&admin, admin.ID).Error; err != nil {
 		t.Fatal(err)
+	}
+	if admin.SessionVersion != 0 {
+		t.Fatal("hash migration unexpectedly revoked sessions")
 	}
 	hash := admin.Password
 	if matches, migrate := adminpassword.Verify(hash, password); !matches || migrate {
@@ -156,7 +163,7 @@ func TestAdminMigrationDoesNotOverwriteConcurrentReset(t *testing.T) {
 	}
 	if err := database.DB.Callback().Update().Before("gorm:update").Register("test:concurrent_reset", func(tx *gorm.DB) {
 		if tx.Statement.Table == "admins" {
-			if err := tx.Exec("UPDATE admins SET password = ? WHERE id = ?", newHash, admin.ID).Error; err != nil {
+			if err := tx.Exec("UPDATE admins SET password = ?, session_version = session_version + 1 WHERE id = ?", newHash, admin.ID).Error; err != nil {
 				tx.AddError(err)
 			}
 		}
@@ -167,7 +174,7 @@ func TestAdminMigrationDoesNotOverwriteConcurrentReset(t *testing.T) {
 	if response.Code != 401 || len(recorder.Result().Cookies()) != 0 {
 		t.Fatalf("old password granted session after concurrent reset: %+v", response)
 	}
-	if err := database.DB.First(&admin, admin.ID).Error; err != nil || admin.Password != newHash {
+	if err := database.DB.First(&admin, admin.ID).Error; err != nil || admin.Password != newHash || admin.SessionVersion != 1 {
 		t.Fatal("migration overwrote concurrent reset")
 	}
 }
@@ -181,7 +188,7 @@ func TestAdminUsernameEditDoesNotRevertConcurrentPasswordChange(t *testing.T) {
 	}
 	if err := database.DB.Callback().Update().Before("gorm:update").Register("test:concurrent_password_change", func(tx *gorm.DB) {
 		if tx.Statement.Table == "admins" {
-			if err := tx.Exec("UPDATE admins SET password = ? WHERE id = ?", newHash, admin.ID).Error; err != nil {
+			if err := tx.Session(&gorm.Session{NewDB: true}).Exec("UPDATE admins SET password = ?, session_version = session_version + 1 WHERE id = ?", newHash, admin.ID).Error; err != nil {
 				tx.AddError(err)
 			}
 		}
@@ -192,7 +199,7 @@ func TestAdminUsernameEditDoesNotRevertConcurrentPasswordChange(t *testing.T) {
 	if response.Code != 200 {
 		t.Fatalf("username edit failed: %+v", response)
 	}
-	if err := database.DB.First(&admin, admin.ID).Error; err != nil || admin.Username != "renamed" || admin.Password != newHash {
+	if err := database.DB.First(&admin, admin.ID).Error; err != nil || admin.Username != "renamed" || admin.Password != newHash || admin.SessionVersion != 1 {
 		t.Fatal("username-only edit reverted concurrent password change")
 	}
 }
@@ -245,7 +252,7 @@ func TestAdminCredentialWrites(t *testing.T) {
 		if response.Code != 200 {
 			t.Fatalf("empty password edit failed: %+v", response)
 		}
-		if err := database.DB.First(&admin, admin.ID).Error; err != nil || admin.Password != hash {
+		if err := database.DB.First(&admin, admin.ID).Error; err != nil || admin.Password != hash || admin.SessionVersion != 0 {
 			t.Fatal("empty password changed credential")
 		}
 	}
@@ -253,14 +260,111 @@ func TestAdminCredentialWrites(t *testing.T) {
 	if response.Code != 200 {
 		t.Fatalf("password edit failed: %+v", response)
 	}
-	if err := database.DB.First(&admin, admin.ID).Error; err != nil ||
+	if err := database.DB.First(&admin, admin.ID).Error; err != nil || admin.SessionVersion != 1 ||
 		bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte("changed-password")) != nil {
-		t.Fatal("edit did not hash new password")
+		t.Fatal("edit did not hash new password and advance session version")
 	}
 	_, oldLogin := performJSONRequest(r, http.MethodPost, "/login", adminLoginBody("new-password"), nil)
 	_, newLogin := performJSONRequest(r, http.MethodPost, "/login", adminLoginBody("changed-password"), nil)
 	if oldLogin.Code != 401 || newLogin.Code != 200 {
 		t.Fatalf("password change login behavior: old=%+v new=%+v", oldLogin, newLogin)
+	}
+}
+
+func TestAdminConcurrentResetDoesNotUpgradeLoginSession(t *testing.T) {
+	r := setupAdminTest(t)
+	oldHash, err := adminpassword.Hash("old-password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	newHash, err := adminpassword.Hash("new-password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	admin := createTestAdmin(t, oldHash)
+	reset := false
+	if err := database.DB.Callback().Query().After("gorm:query").Register("test:reset_after_login_lookup", func(tx *gorm.DB) {
+		if tx.Statement.Table == "admins" && !reset {
+			reset = true
+			// Simulate a reset after Login has read the old password/version but
+			// before it verifies that snapshot and issues its cookie.
+			if err := tx.Session(&gorm.Session{NewDB: true}).Exec("UPDATE admins SET password = ?, session_version = session_version + 1 WHERE id = ?", newHash, admin.ID).Error; err != nil {
+				tx.AddError(err)
+			}
+		}
+	}); err != nil {
+		t.Fatal(err)
+	}
+	recorder, response := performJSONRequest(r, http.MethodPost, "/login", adminLoginBody("old-password"), nil)
+	if !reset || response.Code != 200 {
+		t.Fatalf("expected login using the pre-reset snapshot: %+v", response)
+	}
+	_, session := performJSONRequest(r, http.MethodGet, "/session", "", recorder.Result().Cookies())
+	if session.Code != 401 {
+		t.Fatalf("pre-reset credentials received a post-reset session: %+v", session)
+	}
+	recorder, response = performJSONRequest(r, http.MethodPost, "/login", adminLoginBody("new-password"), nil)
+	if response.Code != 200 {
+		t.Fatalf("new password login failed: %+v", response)
+	}
+	_, session = performJSONRequest(r, http.MethodGet, "/session", "", recorder.Result().Cookies())
+	if session.Code != 200 {
+		t.Fatalf("new password received an invalid session: %+v", session)
+	}
+}
+
+func TestAdminPasswordResetFailurePreservesCredentialAndSession(t *testing.T) {
+	r := setupAdminTest(t)
+	hash, err := adminpassword.Hash("old-password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	admin := createTestAdmin(t, hash)
+	login, response := performJSONRequest(r, http.MethodPost, "/login", adminLoginBody("old-password"), nil)
+	if response.Code != 200 {
+		t.Fatalf("login failed: %+v", response)
+	}
+	if err := database.DB.Callback().Update().After("gorm:update").Before("gorm:commit_or_rollback_transaction").Register("test:reset_rollback", func(tx *gorm.DB) {
+		if tx.Statement.Table == "admins" {
+			tx.AddError(errors.New("reset write failed"))
+		}
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_, response = performJSONRequest(r, http.MethodPut, "/user/"+jsonNumber(admin.ID), `{"password":"new-password"}`, nil)
+	if response.Code != 500 {
+		t.Fatalf("failed reset reported success: %+v", response)
+	}
+	if err := database.DB.First(&admin, admin.ID).Error; err != nil || admin.Password != hash || admin.SessionVersion != 0 {
+		t.Fatal("failed reset changed password or session version")
+	}
+	_, session := performJSONRequest(r, http.MethodGet, "/session", "", login.Result().Cookies())
+	if session.Code != 200 {
+		t.Fatalf("failed reset revoked an existing session: %+v", session)
+	}
+}
+
+func TestAdminPasswordResetPreservesConcurrentVersionIncrement(t *testing.T) {
+	r := setupAdminTest(t)
+	admin := createTestAdmin(t, util.Md5v("old-password"))
+	if err := database.DB.Callback().Update().Before("gorm:update").Register("test:concurrent_version_increment", func(tx *gorm.DB) {
+		if tx.Statement.Table == "admins" {
+			if err := tx.Session(&gorm.Session{NewDB: true}).Exec("UPDATE admins SET session_version = session_version + 1 WHERE id = ?", admin.ID).Error; err != nil {
+				tx.AddError(err)
+			}
+		}
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_, response := performJSONRequest(r, http.MethodPut, "/user/"+jsonNumber(admin.ID), `{"password":"new-password"}`, nil)
+	if response.Code != 200 {
+		t.Fatalf("password reset failed: %+v", response)
+	}
+	if err := database.DB.First(&admin, admin.ID).Error; err != nil || admin.SessionVersion != 2 {
+		t.Fatal("password reset lost a concurrent session version increment")
+	}
+	if matches, _ := adminpassword.Verify(admin.Password, "new-password"); !matches {
+		t.Fatal("password reset did not persist the new credential")
 	}
 }
 

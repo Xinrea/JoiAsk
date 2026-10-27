@@ -138,6 +138,57 @@ func TestInitializeDBPreservesLegacyAdminPassword(t *testing.T) {
 	}
 }
 
+type adminBeforeSessionVersion struct {
+	BaseModel
+	Username string `gorm:"unique"`
+	Password string
+}
+
+func (adminBeforeSessionVersion) TableName() string { return "admins" }
+
+func TestInitializeDBMigratesAdminSessionVersion(t *testing.T) {
+	previous := DB
+	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "admin-session-version.db")), &gorm.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	DB = db
+	t.Cleanup(func() {
+		DB = previous
+		sqlDB.Close()
+	})
+	if err := DB.AutoMigrate(&adminBeforeSessionVersion{}); err != nil {
+		t.Fatal(err)
+	}
+	legacy := adminBeforeSessionVersion{Username: "admin", Password: "existing-hash"}
+	if err := DB.Create(&legacy).Error; err != nil {
+		t.Fatal(err)
+	}
+	initializeDB()
+	var admin Admin
+	if err := DB.First(&admin, legacy.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if admin.Password != legacy.Password || admin.SessionVersion != 0 {
+		t.Fatal("migration changed existing credential or failed to initialize version")
+	}
+	if err := DB.Model(&admin).Update("session_version", 7).Error; err != nil {
+		t.Fatal(err)
+	}
+	initializeDB()
+	if err := DB.First(&admin, legacy.ID).Error; err != nil || admin.SessionVersion != 7 {
+		t.Fatal("repeated initialization reset the session version")
+	}
+	data, err := json.Marshal(admin)
+	if err != nil || strings.Contains(string(data), "session_version") || strings.Contains(string(data), "existing-hash") {
+		t.Fatalf("administrator JSON exposed credentials or version: %s, %v", data, err)
+	}
+}
+
 func TestQuestionBilibiliUIDIsNotAForeignKey(t *testing.T) {
 	var err error
 	DB, err = gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "foreign-key.db")), &gorm.Config{})

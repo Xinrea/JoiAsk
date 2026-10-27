@@ -143,8 +143,9 @@ type LikeRecord struct {
 
 type Admin struct {
 	BaseModel
-	Username string `gorm:"unique" json:"username"`
-	Password string `json:"-"`
+	Username       string `gorm:"unique" json:"username"`
+	Password       string `json:"-"`
+	SessionVersion int    `gorm:"not null;default:0" json:"-"`
 }
 
 type Config struct {

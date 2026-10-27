@@ -102,7 +102,7 @@ func Run(store sessions.Store) {
 		}
 		// Question
 		{
-			api.GET("/question", questionController.Get)
+			api.GET("/question", optionalAuthMiddleware, questionController.Get)
 			api.POST("/question", questionController.Post)
 			api.PUT("/question/:id", authMiddleware, questionController.Put)
 			api.POST("/question/:id/emoji", questionController.Emoji)

@@ -68,6 +68,9 @@ func (*UserController) Login(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Set("user", user.ID)
 	session.Set("authed", true)
+	// Bind to the version read with the verified password, not a fresh version
+	// that could belong to a concurrent password reset.
+	session.Set(adminSessionVersionKey, user.SessionVersion)
 	err = session.Save()
 	if err != nil {
 		Fail(c, 500, "内部错误")
@@ -110,6 +113,7 @@ func (*UserController) Logout(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Delete("user")
 	session.Delete("authed")
+	session.Delete(adminSessionVersionKey)
 	err := session.Save()
 	if err != nil {
 		Fail(c, 500, "内部错误")
@@ -159,6 +163,9 @@ func (*UserController) Put(c *gin.Context) {
 		}
 		user.Password = hash
 		updates["password"] = hash
+		// Revoke every previously issued session in the same write as the
+		// password change. A database increment also preserves concurrent resets.
+		updates["session_version"] = gorm.Expr("session_version + 1")
 	}
 	// Only update requested fields: saving a stale full record could revert a
 	// concurrent password migration/reset or recreate a deleted administrator.
