@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -60,12 +59,12 @@ func TestInitializeDBFromPreviousSchema(t *testing.T) {
 
 	initializeDB()
 
-	var admin Admin
-	if err := DB.Where("username = ?", "admin").First(&admin).Error; err != nil {
+	var adminCount int64
+	if err := DB.Model(&Admin{}).Count(&adminCount).Error; err != nil {
 		t.Fatal(err)
 	}
-	if bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte("admin")) != nil {
-		t.Fatal("new default administrator must use bcrypt")
+	if adminCount != 0 {
+		t.Fatal("initialization must not create any administrator")
 	}
 
 	var question Question
@@ -173,8 +172,8 @@ func TestInitializeDBMigratesAdminSessionVersion(t *testing.T) {
 	if err := DB.First(&admin, legacy.ID).Error; err != nil {
 		t.Fatal(err)
 	}
-	if admin.Password != legacy.Password || admin.SessionVersion != 0 {
-		t.Fatal("migration changed existing credential or failed to initialize version")
+	if admin.Password != legacy.Password || admin.SessionVersion != 0 || admin.Role != AdminRoleSuperAdmin {
+		t.Fatal("migration changed existing credential or failed to initialize version/legacy role")
 	}
 	if err := DB.Model(&admin).Update("session_version", 7).Error; err != nil {
 		t.Fatal(err)

@@ -38,6 +38,12 @@ DEV_PORT=8088 docker compose -f docker-compose.dev.yml up --build
 
 此时通过 `http://localhost:8088/` 访问。依赖文件发生变化时，使用 `docker compose -f docker-compose.dev.yml up --build` 重新构建对应开发镜像。
 
+### 首次创建管理员
+
+开发环境也不再自动创建 `admin/admin`。首次使用前，需要通过服务端 CLI 显式创建超级管理员；已有账号按角色迁移规则保留。密码只通过标准输入传入，安全输入方法及恢复说明见 [README 的管理员初始化与密码恢复](README.md#管理员初始化与密码恢复仅服务端)。
+
+执行命令前先停止所有连接同一数据库的后端实例。宿主机使用 `go run cmd/cmd.go admin create <username>`；Compose 开发环境先运行 `docker compose -f docker-compose.dev.yml stop backend`，再将密码通过管道传给 `docker compose -f docker-compose.dev.yml run --rm --no-deps -T backend go run cmd/cmd.go admin create <username>`。后者复用开发环境的配置与数据库卷。成功后运行 `docker compose -f docker-compose.dev.yml start backend`。不要混用生产镜像的 `/work/jask` 路径和开发容器的 `/app` 源码路径。
+
 ## 开发与调试
 
 要注意本项目前后端分离存放在不同的仓库中，在 clone 时注意加上 `--recurse-submodules`。

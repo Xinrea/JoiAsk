@@ -40,11 +40,11 @@ func setupAdminTest(t *testing.T) *gin.Engine {
 		Success(c, admin.ID)
 	})
 	r.POST("/user", func(c *gin.Context) {
-		c.Set("user", database.Admin{Username: "admin"})
+		c.Set("user", database.Admin{BaseModel: database.BaseModel{ID: 1}, Username: "operator", Role: database.AdminRoleSuperAdmin})
 		controller.Post(c)
 	})
 	r.PUT("/user/:id", func(c *gin.Context) {
-		c.Set("user", database.Admin{Username: "admin"})
+		c.Set("user", database.Admin{BaseModel: database.BaseModel{ID: 1}, Username: "operator", Role: database.AdminRoleSuperAdmin})
 		controller.Put(c)
 	})
 	return r
