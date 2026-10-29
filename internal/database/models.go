@@ -141,11 +141,18 @@ type LikeRecord struct {
 	Question   Question `json:"question"`
 }
 
+const (
+	AdminRoleSuperAdmin = "super_admin"
+	AdminRoleAdmin      = "admin"
+)
+
 type Admin struct {
 	BaseModel
 	Username       string `gorm:"unique" json:"username"`
 	Password       string `json:"-"`
 	SessionVersion int    `gorm:"not null;default:0" json:"-"`
+	// Empty marks pre-role accounts for the one-time legacy migration only.
+	Role string `gorm:"size:32;not null;default:''" json:"role"`
 }
 
 type Config struct {

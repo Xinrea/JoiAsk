@@ -49,7 +49,8 @@ func setupRecordIDTestDB(t *testing.T) {
 		&database.Tag{BaseModel: database.BaseModel{ID: 1}, TagName: "default"},
 		&database.Tag{BaseModel: database.BaseModel{ID: 2}, TagName: "other"},
 		&database.Question{BaseModel: database.BaseModel{ID: 2}, TagID: 1, Content: "original"},
-		&database.Admin{BaseModel: database.BaseModel{ID: 2}, Username: "reviewer", Password: "test-only"},
+		&database.Admin{BaseModel: database.BaseModel{ID: 1}, Username: "operator", Password: "test-only", Role: database.AdminRoleSuperAdmin},
+		&database.Admin{BaseModel: database.BaseModel{ID: 2}, Username: "reviewer", Password: "test-only", Role: database.AdminRoleAdmin},
 		&database.Emoji{BaseModel: database.BaseModel{ID: 2}, Tag: "[test]", URL: "/test.png"},
 	} {
 		if err := db.Create(record).Error; err != nil {
@@ -88,7 +89,7 @@ func requestRecordID(t *testing.T, endpoint recordIDEndpoint, raw string) testAP
 	router.POST("/test", func(c *gin.Context) {
 		// Exercise the handler after router parameter extraction and admin auth.
 		c.Params = gin.Params{{Key: "id", Value: raw}}
-		c.Set("user", database.Admin{Username: "admin"})
+		c.Set("user", database.Admin{BaseModel: database.BaseModel{ID: 1}, Username: "operator", Role: database.AdminRoleSuperAdmin})
 		endpoint.handler(c)
 	})
 	var body bytes.Buffer

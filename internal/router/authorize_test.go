@@ -57,8 +57,8 @@ func setupAuthorizeTest(t *testing.T) *authorizeFixture {
 	}
 	f := &authorizeFixture{
 		db:     db,
-		admin:  database.Admin{Username: "admin", Password: hash},
-		editor: database.Admin{Username: "editor", Password: hash},
+		admin:  database.Admin{Username: "admin", Password: hash, Role: database.AdminRoleSuperAdmin},
+		editor: database.Admin{Username: "editor", Password: hash, Role: database.AdminRoleAdmin},
 	}
 	for _, admin := range []*database.Admin{&f.admin, &f.editor} {
 		if err := db.Create(admin).Error; err != nil {
@@ -87,6 +87,8 @@ func setupAuthorizeTest(t *testing.T) *authorizeFixture {
 	questions := &controller.QuestionController{}
 	f.router.POST("/api/login", users.Login)
 	f.router.GET("/api/info", authMiddleware, users.Info)
+	f.router.GET("/api/user", authMiddleware, users.Get)
+	f.router.POST("/api/user", authMiddleware, users.Post)
 	f.router.PUT("/api/user/:id", authMiddleware, users.Put)
 	f.router.DELETE("/api/user/:id", authMiddleware, users.Delete)
 	f.router.GET("/api/question", optionalAuthMiddleware, questions.Get)

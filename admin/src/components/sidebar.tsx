@@ -11,6 +11,7 @@ import {
   Tag,
   Users,
   UserCheck,
+  UserRound,
   Settings,
   Palette,
   Home,
@@ -25,11 +26,15 @@ const navItems = [
   { href: "/dashboard/members", label: "注册用户", icon: UserCheck },
   { href: "/dashboard/settings", label: "设置", icon: Settings },
   { href: "/dashboard/custom", label: "自定义", icon: Palette },
+  { href: "/dashboard/profile", label: "个人资料", icon: UserRound },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+  const visibleNavItems = navItems.filter(
+    (item) => item.href !== "/dashboard/users" || user?.role === "super_admin"
+  );
 
   return (
     <aside
@@ -69,7 +74,7 @@ export function Sidebar() {
         </h1>
       </div>
       <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
-        {navItems.slice(0, 1).map((item) => {
+        {visibleNavItems.slice(0, 1).map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
@@ -122,7 +127,7 @@ export function Sidebar() {
             })}
           </div>
         </div>
-        {navItems.slice(1).map((item) => {
+        {visibleNavItems.slice(1).map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (

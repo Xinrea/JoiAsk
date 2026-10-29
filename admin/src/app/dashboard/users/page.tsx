@@ -4,6 +4,14 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -21,13 +29,39 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import { getUsers, createUser, updateUser, deleteUser, User } from "@/lib/api";
+import { getUsers, createUser, updateUser, deleteUser, User, UserRole } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleString("zh-CN");
 }
 
 export default function UsersPage() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <p className="text-muted-foreground">加载中...</p>;
+  }
+
+  if (user?.role !== "super_admin") {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-semibold text-foreground">无权访问账号管理</h1>
+        <p className="text-sm text-muted-foreground">
+          仅超级管理员可管理后台账号。你仍可使用其他业务和配置功能。
+        </p>
+        <Button asChild variant="outline">
+          <Link href="/dashboard/profile">编辑个人资料</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return <UserManagement />;
+}
+
+function UserManagement() {
+  const { user: currentUser, checkAuth } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [dialog, setDialog] = useState<{
@@ -43,18 +77,27 @@ export default function UsersPage() {
     open: boolean;
     id: number;
   }>({ open: false, id: 0 });
-  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [formData, setFormData] = useState<{ username: string; password: string; role: UserRole }>({
+    username: "",
+    password: "",
+    role: "admin",
+  });
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setIsLoading(true);
+    setLoadError("");
     try {
       const res = await getUsers();
       if (res.code === 200 && res.data) {
         setUsers(res.data);
+      } else {
+        setLoadError(res.message || "加载账号失败，请重试");
       }
-    } catch (error) {
-      console.error("Failed to load users:", error);
+    } catch {
+      setLoadError("加载账号失败，请检查网络连接后重试");
     } finally {
       setIsLoading(false);
     }
@@ -65,6 +108,7 @@ export default function UsersPage() {
   }, [loadUsers]);
 
   const handleSubmit = async () => {
+    if (isSaving) return;
     setError("");
     if (!formData.username.trim()) {
       setError("用户名不能为空");
@@ -75,17 +119,19 @@ export default function UsersPage() {
       return;
     }
 
+    setIsSaving(true);
     try {
       const data = {
         username: formData.username,
         password: formData.password,
+        role: formData.role,
       };
 
       if (dialog.mode === "add") {
         const res = await createUser(data);
         if (res.code === 200) {
           setDialog({ open: false, mode: "add", user: null });
-          setFormData({ username: "", password: "" });
+          setFormData({ username: "", password: "", role: "admin" });
           loadUsers();
         } else {
           setError(res.message || "添加失败");
@@ -94,7 +140,11 @@ export default function UsersPage() {
         const res = await updateUser(dialog.user.id, data);
         if (res.code === 200) {
           setDialog({ open: false, mode: "add", user: null });
-          setFormData({ username: "", password: "" });
+          setFormData({ username: "", password: "", role: "admin" });
+          if (dialog.user.id === currentUser?.id) {
+            const authenticated = await checkAuth();
+            if (!authenticated || data.role !== "super_admin") return;
+          }
           loadUsers();
         } else {
           setError(res.message || "修改失败");
@@ -102,6 +152,8 @@ export default function UsersPage() {
       }
     } catch {
       setError(dialog.mode === "add" ? "添加失败" : "修改失败");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -121,13 +173,13 @@ export default function UsersPage() {
   };
 
   const openAddDialog = () => {
-    setFormData({ username: "", password: "" });
+    setFormData({ username: "", password: "", role: "admin" });
     setDialog({ open: true, mode: "add", user: null });
     setError("");
   };
 
   const openEditDialog = (user: User) => {
-    setFormData({ username: user.username, password: "" });
+    setFormData({ username: user.username, password: "", role: user.role });
     setDialog({ open: true, mode: "edit", user });
     setError("");
   };
@@ -139,7 +191,12 @@ export default function UsersPage() {
           <h1 className="text-2xl font-semibold text-foreground tracking-tight">
             账号管理
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">管理后台登录账号</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            两种角色拥有相同的业务和配置权限，仅超级管理员可管理后台账号和角色。
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            不能删除当前登录账号，也不能删除或降级最后一位超级管理员。
+          </p>
         </div>
         <Button onClick={openAddDialog}>
           <Plus className="h-4 w-4 mr-2" />
@@ -147,12 +204,19 @@ export default function UsersPage() {
         </Button>
       </header>
 
+      {loadError && (
+        <div role="alert" className="flex items-center gap-3 text-sm text-destructive">
+          {loadError}
+          <Button variant="outline" size="sm" onClick={loadUsers}>重试</Button>
+        </div>
+      )}
       <section>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>ID</TableHead>
               <TableHead>用户名</TableHead>
+              <TableHead>角色</TableHead>
               <TableHead>创建时间</TableHead>
               <TableHead>更新时间</TableHead>
               <TableHead>操作</TableHead>
@@ -161,13 +225,13 @@ export default function UsersPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
+                <TableCell colSpan={6} className="text-center py-8">
                   加载中...
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
+                <TableCell colSpan={6} className="text-center py-8">
                   暂无数据
                 </TableCell>
               </TableRow>
@@ -176,6 +240,9 @@ export default function UsersPage() {
                 <TableRow key={user.id}>
                   <TableCell>{user.id}</TableCell>
                   <TableCell className="font-medium">{user.username}</TableCell>
+                  <TableCell>
+                    {user.role === "super_admin" ? "超级管理员" : "管理员"}
+                  </TableCell>
                   <TableCell className="text-sm">
                     {formatDate(user.created_at)}
                   </TableCell>
@@ -187,6 +254,7 @@ export default function UsersPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        aria-label={`编辑 ${user.username}`}
                         onClick={() => openEditDialog(user)}
                       >
                         <Pencil className="h-4 w-4" />
@@ -194,6 +262,9 @@ export default function UsersPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        disabled={!currentUser || user.id === currentUser.id}
+                        title={user.id === currentUser?.id ? "不能删除当前登录账号" : "删除账号"}
+                        aria-label={user.id === currentUser?.id ? "不能删除当前登录账号" : `删除 ${user.username}`}
                         onClick={() =>
                           setDeleteDialog({ open: true, id: user.id })
                         }
@@ -251,6 +322,24 @@ export default function UsersPage() {
                 }
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">角色</Label>
+              <Select
+                value={formData.role}
+                onValueChange={(role: UserRole) => setFormData({ ...formData, role })}
+              >
+                <SelectTrigger id="role" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">管理员</SelectItem>
+                  <SelectItem value="super_admin">超级管理员</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              修改密码或角色会使该账号的所有登录失效，需重新登录；仅修改用户名不会。
+            </p>
             {error && <div className="text-red-500 text-sm">{error}</div>}
           </div>
           <DialogFooter>
@@ -262,8 +351,8 @@ export default function UsersPage() {
             >
               取消
             </Button>
-            <Button onClick={handleSubmit}>
-              {dialog.mode === "add" ? "添加" : "保存"}
+            <Button onClick={handleSubmit} disabled={isSaving}>
+              {isSaving ? "保存中..." : dialog.mode === "add" ? "添加" : "保存"}
             </Button>
           </DialogFooter>
         </DialogContent>

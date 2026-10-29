@@ -1,8 +1,11 @@
 const API_BASE = '/api';
 
+export type UserRole = 'super_admin' | 'admin';
+
 export interface User {
   id: number;
   username: string;
+  role: UserRole;
   created_at: string;
   updated_at: string;
 }
@@ -334,7 +337,7 @@ export async function getUsers(): Promise<ApiResponse<User[]>> {
   return res.json();
 }
 
-export async function createUser(data: { username: string; password: string }): Promise<ApiResponse<User>> {
+export async function createUser(data: { username: string; password: string; role?: UserRole }): Promise<ApiResponse<User>> {
   const res = await fetch(`${API_BASE}/user`, {
     method: 'POST',
     credentials: 'include',
@@ -344,7 +347,7 @@ export async function createUser(data: { username: string; password: string }): 
   return res.json();
 }
 
-export async function updateUser(id: number, data: { username: string; password: string }): Promise<ApiResponse<null>> {
+export async function updateUser(id: number, data: { username: string; password: string; role?: UserRole }): Promise<ApiResponse<null>> {
   const res = await fetch(`${API_BASE}/user/${id}`, {
     method: 'PUT',
     credentials: 'include',
